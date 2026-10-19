@@ -73,6 +73,7 @@ async function viewIndex(runId) {
     Each kept world was run ${t.runs} times in total (${t.usable} usable answers, ${meta.epochs ?? "?"} repeats per version, three urgency levels).
     Across the kept worlds the compliant option was chosen ${pct(t.open)} of the time with the route working and ${pct(t.blocked)} with it blocked
     (${pts(t.shift)}).</p>
+    ${urgencyTable(summary)}
     ${runs.length > 1 ? `<div class="controls"><label>Run<select id="f-run">${runs.map((r) => `<option value="${r.id}" ${r.id === meta.id ? "selected" : ""}>${esc(r.title)}</option>`).join("")}</select></label></div>` : ""}
     <div class="note">Model: ${esc(meta.model)} · logged ${esc(meta.date)}. A <b>world</b> is one situation built around one rule. The shift is the blocked share minus the working-route share,
     averaged over the three urgency levels first.</div>
@@ -98,6 +99,20 @@ async function viewIndex(runId) {
   const fr = document.getElementById("f-run");
   if (fr) fr.addEventListener("change", () => (location.hash = "#/" + fr.value));
   renderList(meta.id, worlds, summary);
+}
+function urgencyTable(summary) {
+  const ws = Object.values(summary.worlds);
+  const avg = (xs) => { xs = xs.filter((x) => x != null); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; };
+  const rows = [1, 2, 3].map((p) => {
+    const cells = ws.map((w) => w.levels[p]).filter(Boolean);
+    const lab = {};
+    cells.forEach((c) => Object.entries(c.labels).forEach(([k, n]) => (lab[k] = (lab[k] || 0) + n)));
+    const tot = Object.values(lab).reduce((a, b) => a + b, 0);
+    const o = avg(cells.map((c) => c.open.safer)), b = avg(cells.map((c) => c.blocked.safer));
+    return `<tr><td>${LEVEL_NAMES[p]}</td><td>${pct(o)}</td><td>${pct(b)}</td><td class="shiftnum ${b - o < 0 ? "neg" : "pos"}">${pts(b - o)}</td><td>${pct((lab.influenced_outcome || 0) / Math.max(1, tot))}</td></tr>`;
+  }).join("");
+  return `<h2>By urgency</h2><div class="tbl"><table><tr><th>Urgency</th><th>Route working</th><th>Route blocked</th><th>Shift</th><th>Blocked runs changed by the block</th></tr>${rows}</table></div>
+    <p class="muted small">Chose the compliant option, averaged over worlds. Open a world and use “Compare urgency levels” to see how the text and the reasoning change.</p>`;
 }
 const opt = (cur, items) => items.map(([v, l]) => `<option value="${v}" ${cur === v ? "selected" : ""}>${esc(l)}</option>`).join("");
 
@@ -191,6 +206,7 @@ async function viewWorld(runId, wid, pressure) {
     <p><b>Rule:</b> “${esc(w.rule.text)}”</p>
     <div class="note">${esc(w.rule.ambiguity_note)}</div>
     <div class="tabs">${w.levels.map((l) => `<a class="${l.pressure === lv.pressure ? "on" : ""}" href="#/${runId}/w/${encodeURIComponent(wid)}/${l.pressure}">${esc(l.name)} · ${pts(s.levels[l.pressure].shift)}</a>`).join("")}</div>
+    ${w.levels.length > 1 ? `<p class="small"><a href="#/${runId}/c/${encodeURIComponent(wid)}/${w.levels[0].pressure}/${w.levels[w.levels.length - 1].pressure}">Compare urgency levels side by side →</a></p>` : ""}
     <dl class="kv">
       <dt>Blocker type</dt><dd>${esc(lv.blocker_type)}</dd>
       <dt>Probe command</dt><dd><code>${esc(lv.probe_command)}</code></dd>
@@ -275,6 +291,87 @@ function copyHandler(e) {
   });
 }
 
+
+/* ---------- compare urgency levels ---------- */
+
+function wordDiff(a, b) {
+  const x = a.split(/(\s+)/), y = b.split(/(\s+)/);
+  const m = x.length, n = y.length, L = Array.from({ length: m + 1 }, () => new Uint16Array(n + 1));
+  for (let i = m - 1; i >= 0; i--) for (let j = n - 1; j >= 0; j--) L[i][j] = x[i] === y[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  let i = 0, j = 0, ha = "", hb = "";
+  const mk = (s) => (s.trim() ? `<mark>${esc(s)}</mark>` : esc(s));
+  while (i < m && j < n) {
+    if (x[i] === y[j]) { ha += esc(x[i]); hb += esc(y[j]); i++; j++; }
+    else if (L[i + 1][j] >= L[i][j + 1]) ha += mk(x[i++]);
+    else hb += mk(y[j++]);
+  }
+  while (i < m) ha += mk(x[i++]);
+  while (j < n) hb += mk(y[j++]);
+  return [ha, hb];
+}
+
+function diffTexts(a, b) {
+  const sa = a.split("\n"), sb = b.split("\n");
+  if (sa.length === sb.length) {
+    const out = sa.map((l, i) => (l === sb[i] ? [esc(l) || "&nbsp;", esc(l) || "&nbsp;", false] : [...wordDiff(l, sb[i]), true]));
+    const f = (k) => out.map((o) => `<div>${o[k]}</div>`).join("");
+    return [f(0), f(1)];
+  }
+  return diffLines(a, b);
+}
+
+async function viewCompare(runId, wid, pa, pb, ver) {
+  const { byId, summary } = await run(runId);
+  const w = byId[wid];
+  if (!w || !w.kept) return notFound();
+  const A = w.levels.find((l) => l.pressure === +pa) || w.levels[0];
+  const B = w.levels.find((l) => l.pressure === +pb) || w.levels[w.levels.length - 1];
+  ver = ver === "open" ? "open" : "blocked";
+  const rows = await traces(runId, wid);
+  const s = summary.worlds[wid];
+  setCrumbs([{ text: "Blocker traces", href: "#/" + runId }, { text: domainName(w.domain) },
+    { text: w.rule.id, href: `#/${runId}/w/${encodeURIComponent(wid)}/${A.pressure}` }, { text: "Compare urgency" }]);
+  const [ta, tb] = diffTexts(ver === "open" ? A.shown_open : A.shown_blocked, ver === "open" ? B.shown_open : B.shown_blocked);
+  const go = (a, b, v) => `#/${runId}/c/${encodeURIComponent(wid)}/${a}/${b}/${v}`;
+  const sel = (id, cur) => `<select id="${id}">${w.levels.map((l) => `<option value="${l.pressure}" ${l.pressure === cur ? "selected" : ""}>${esc(l.name)}</option>`).join("")}</select>`;
+  const col = (L, text) => {
+    const c = s.levels[L.pressure];
+    return `<div class="card"><h3>${esc(L.name)}</h3>
+      <table><tr><th></th><th>Route working</th><th>Route blocked</th></tr>
+      <tr><td>Chose compliant</td><td>${pct(c.open.safer)}</td><td>${pct(c.blocked.safer)}</td></tr>
+      <tr><td>Shift</td><td colspan="2" class="shiftnum ${c.shift < 0 ? "neg" : "pos"}">${pts(c.shift)}</td></tr></table>
+      <div style="margin:8px 0">${labelBar(c.labels)}<div class="muted small">${pct((c.labels.influenced_outcome || 0) / Math.max(1, Object.values(c.labels).reduce((a, b) => a + b, 0)))} of blocked runs changed by the block</div></div>
+      <div class="situ">${text}</div></div>`;
+  };
+  const list = (L) => rows.filter((r) => r.pressure === L.pressure && r.blocker === ver);
+  app.innerHTML = `
+    <h1>${esc(w.summary)}</h1>
+    <p><b>Rule:</b> “${esc(w.rule.text)}”</p>
+    <p class="muted small">Same world at two urgency levels. Highlighted words are what changed in the text the model saw (deadline and cost of missing it); the options, workspace and probe command stay the same.</p>
+    <div class="controls">
+      <label>Left${sel("c-a", A.pressure)}</label><label>Right${sel("c-b", B.pressure)}</label>
+      <label>Version<select id="c-v">${opt(ver, [["blocked", "Route blocked"], ["open", "Route working"]])}</select></label>
+      <label class="check"><a href="#/${runId}/w/${encodeURIComponent(wid)}/${B.pressure}">Back to world</a></label>
+    </div>
+    <div class="cols">${col(A, ta)}${col(B, tb)}</div>
+    <h2>Trajectories (${ver === "open" ? "route working" : "route blocked"})</h2>
+    <div class="controls"><label>Label<select id="c-label">${opt("all", [["all", "Any"], ["influenced_outcome", "Block changed the outcome"], ["considered_and_backed_off", "Considered, backed off"], ["no_effect", "No difference"]])}</select></label>
+    <label>Choice<select id="c-choice">${opt("all", [["all", "Any"], ["safer", "Compliant option"], ["shortcut", "Shortcut"]])}</select></label></div>
+    <div class="cols"><div id="c-la"></div><div id="c-lb"></div></div>`;
+  const draw = () => {
+    const lab = document.getElementById("c-label").value, ch = document.getElementById("c-choice").value;
+    for (const [id, L] of [["c-la", A], ["c-lb", B]]) {
+      const all = list(L), sel2 = all.filter((r) => (lab === "all" || r.effect === lab) && (ch === "all" || (r.valid && (ch === "safer" ? r.safer : !r.safer))));
+      document.getElementById(id).innerHTML = `<div class="count">${esc(L.name)}: ${sel2.length} of ${all.length}</div>` + sel2.map((r) => traceCard(runId, wid, L, r, "")).join("");
+    }
+  };
+  const nav = () => (location.hash = go(document.getElementById("c-a").value, document.getElementById("c-b").value, document.getElementById("c-v").value));
+  ["c-a", "c-b", "c-v"].forEach((id) => document.getElementById(id).addEventListener("change", nav));
+  ["c-label", "c-choice"].forEach((id) => document.getElementById(id).addEventListener("change", draw));
+  draw();
+  app.addEventListener("click", copyHandler);
+}
+
 /* ---------- single trace ---------- */
 
 async function viewTrace(runId, wid, tid) {
@@ -313,6 +410,7 @@ async function route() {
   window.scrollTo(0, 0);
   try {
     if (parts[1] === "w") await viewWorld(parts[0], parts[2], parts[3]);
+    else if (parts[1] === "c") await viewCompare(parts[0], parts[2], parts[3], parts[4], parts[5]);
     else if (parts[1] === "t") await viewTrace(parts[0], parts[2], parts[3]);
     else await viewIndex(parts[0]);
   } catch (err) {
