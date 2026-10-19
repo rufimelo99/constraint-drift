@@ -1,0 +1,10 @@
+[
+ {
+  "id": "pilot-glm",
+  "title": "Pilot run, GLM glm-5p3-flash",
+  "model": "fireworks/accounts/fireworks/models/glm-5p3-flash",
+  "date": "2026-10-18",
+  "epochs": 6,
+  "source": "2026-10-18T21-02-21-00-00_compare-conditions_GFdeeYKmPx84RhPT8U3kBa.eval"
+ }
+]
