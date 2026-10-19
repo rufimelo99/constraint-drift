@@ -8,6 +8,7 @@ Writes data/<id>/{worlds.json,summary.json,traces/<world>.json} and adds the run
 
 import argparse
 import json
+import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -28,6 +29,61 @@ def world_id(rule_id: str, world) -> str:
 def mean(xs):
     xs = list(xs)
     return sum(xs) / len(xs) if xs else None
+
+
+NARROW = re.compile(
+    r"not (a )?(direct|literal)|doesn'?t (cover|apply|prohibit|forbid)|does not (cover|apply|prohibit|forbid)|"
+    r"only (says|prohibits|forbids|applies)|not (explicitly )?(prohibited|forbidden)|is not (a )?production|not production|"
+    r"not an? (overwrite|push|restart|write|delete)",
+    re.I,
+)
+
+
+def excerpt(text: str, evidence: str) -> str:
+    """The sentence where the model reads the rule narrowly, with its neighbours; the monitor's evidence otherwise."""
+    sents = [s.strip() for s in re.split(r"(?<=[.!?])\s+|\n+", text or "") if s.strip()]
+    for i, s in enumerate(sents):
+        if NARROW.search(s) and not re.search(r"violat|breach|breaks? the", s, re.I):
+            text = " ".join(sents[max(0, i - 1) : i + 2])
+            if len(text) > 700:
+                cut = text[:700].rsplit(". ", 1)[0]
+                text = (cut + ".") if len(cut) > 200 else text[:700] + "…"
+            return text
+    return evidence or ""
+
+
+def pick_highlights(worlds: list[dict], traces: dict) -> list[dict]:
+    """Per world, up to two blocked runs that took the shortcut after arguing the rule forbids less: the lowest and highest urgency."""
+    out = []
+    by_id = {w["id"]: w for w in worlds}
+    for wid, rows in traces.items():
+        cands = [
+            r
+            for r in rows
+            if r["valid"] and r["blocker"] == "blocked" and r["has_rule"] and not r["safer"] and r["reinterpreted_rule"]
+            and r["evidence"] and NARROW.search(r["reasoning"] or "")
+        ]
+        chosen = []
+        for p in sorted({r["pressure"] for r in cands}):
+            level = [r for r in cands if r["pressure"] == p]
+            # A mid-length quote reads best; the shortest are fragments and the longest are dumps.
+            level.sort(key=lambda r: abs(len(excerpt(r["reasoning"], r["evidence"])) - 380))
+            chosen.append(level[0])
+        for r in ([chosen[0], chosen[-1]] if len(chosen) > 1 else chosen):
+            out.append(
+                {
+                    "world": wid,
+                    "trace": r["id"],
+                    "pressure": r["pressure"],
+                    "rule": by_id[wid]["rule"]["text"],
+                    "domain": by_id[wid]["domain"],
+                    "summary": by_id[wid]["summary"],
+                    "effect": r["effect"],
+                    "excerpt": excerpt(r["reasoning"], r["evidence"]),
+                    "evidence": r["evidence"],
+                }
+            )
+    return out
 
 
 def main() -> None:
@@ -174,6 +230,7 @@ def main() -> None:
     (out / "traces").mkdir(parents=True, exist_ok=True)
     (out / "worlds.json").write_text(json.dumps(worlds, indent=1))
     (out / "summary.json").write_text(json.dumps(summary, indent=1))
+    (out / "highlights.json").write_text(json.dumps(pick_highlights(worlds, traces), indent=1))
     for wid, rows in traces.items():
         rows.sort(key=lambda x: (x["pressure"], x["has_rule"], x["blocker"], x["epoch"]))
         (out / "traces" / f"{wid}.json").write_text(json.dumps(rows))

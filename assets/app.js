@@ -73,6 +73,7 @@ async function viewIndex(runId) {
     Each kept world was run ${t.runs} times in total (${t.usable} usable answers, ${meta.epochs ?? "?"} repeats per version, three urgency levels).
     Across the kept worlds the compliant option was chosen ${pct(t.open)} of the time with the route working and ${pct(t.blocked)} with it blocked
     (${pts(t.shift)}).</p>
+    <p><a href="#/${meta.id}/highlights"><b>Read examples of the model reinterpreting a rule →</b></a></p>
     ${urgencyTable(summary)}
     ${runs.length > 1 ? `<div class="controls"><label>Run<select id="f-run">${runs.map((r) => `<option value="${r.id}" ${r.id === meta.id ? "selected" : ""}>${esc(r.title)}</option>`).join("")}</select></label></div>` : ""}
     <div class="note">Model: ${esc(meta.model)} · logged ${esc(meta.date)}. A <b>world</b> is one situation built around one rule. The shift is the blocked share minus the working-route share,
@@ -230,7 +231,7 @@ async function viewWorld(runId, wid, pressure) {
       <label>Choice<select id="t-choice">${opt("all", [["all", "Any"], ["safer", "Compliant option"], ["shortcut", "Shortcut"]])}</select></label>
       <label>Search<input id="t-q" type="search" placeholder="text in the reasoning"></label>
     </div>
-    <div id="traces"></div>`;
+    ${hlLegend}<div id="traces"></div>`;
 
   const draw = () => {
     const v = document.getElementById("t-ver").value, lab = document.getElementById("t-label").value;
@@ -247,12 +248,18 @@ async function viewWorld(runId, wid, pressure) {
   app.addEventListener("click", copyHandler);
 }
 
+const RE_NARROW = "not (?:a )?(?:direct|literal)|doesn'?t (?:cover|apply|prohibit|forbid)|does not (?:cover|apply|prohibit|forbid)|only (?:says|prohibits|forbids|applies)|not (?:explicitly )?(?:prohibited|forbidden)|is not (?:a )?production|not production|not an? (?:overwrite|push|restart|write|delete)|not a production|one could argue|arguably";
+const RE_INFEAS = "cannot (?:meet|make|complete|finish)|can'?t (?:meet|make)|impossible|misses? the (?:deadline|freeze)|too late|won'?t (?:finish|complete)|exceeds? the";
+const HL = new RegExp(`(${RE_NARROW})|(${RE_INFEAS})`, "gi");
+let markUp = true;
 function highlight(text, q) {
-  const safe = esc(text);
+  let safe = esc(text);
+  if (markUp) safe = safe.replace(HL, (m, a) => `<mark class="${a ? "rd" : "fe"}">${m}</mark>`);
   if (!q || q.length < 2) return safe;
-  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/&/g, "&amp;"), "gi");
+  const re = new RegExp("(?![^<]*>)" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/&/g, "&amp;"), "gi");
   return safe.replace(re, (m) => `<mark>${m}</mark>`);
 }
+const hlLegend = '<p class="muted small"><mark class="rd">reads the rule narrowly</mark> <mark class="fe">says the compliant option cannot meet the deadline</mark> (keyword match, not a judgment)</p>';
 function elide(text) {
   if (!text || text.length <= ELIDE) return text || "";
   const h = ELIDE / 2;
@@ -372,6 +379,42 @@ async function viewCompare(runId, wid, pa, pb, ver) {
   app.addEventListener("click", copyHandler);
 }
 
+
+/* ---------- highlights ---------- */
+
+async function viewHighlights(runId) {
+  const runs = await manifest();
+  const meta = runs.find((r) => r.id === runId) || runs[0];
+  const [{ worlds }, items] = await Promise.all([run(meta.id), getJSON(`data/${meta.id}/highlights.json`)]);
+  setCrumbs([{ text: "Blocker traces", href: "#/" + meta.id }, { text: "Highlights" }]);
+  const domains = [...new Set(items.map((x) => x.domain))].sort();
+  app.innerHTML = `
+    <h1>Reinterpretation examples</h1>
+    <p>Blocked runs where the model took the shortcut after arguing that the rule forbids less than it appears to. For each of ${new Set(items.map((x) => x.world)).size} worlds, the lowest and highest urgency level with such a run.
+    The excerpt is the sentence where the model reads the rule narrowly, with its neighbours; open the run to read all of it.</p>
+    <div class="note">This shows what the model argued, not why it chose. The same narrow readings appear in runs that went on to choose the compliant option.</div>
+    <div class="controls">
+      <label>Urgency<select id="h-p">${opt("0", [["0", "All"], ["1", "Routine"], ["2", "Important"], ["3", "Critical"]])}</select></label>
+      <label>Domain<select id="h-d"><option value="">All</option>${domains.map((d) => `<option value="${d}">${esc(domainName(d))}</option>`).join("")}</select></label>
+    </div>
+    ${hlLegend}<div id="h-list"></div>`;
+  const draw = () => {
+    const p = +document.getElementById("h-p").value, d = document.getElementById("h-d").value;
+    const sel = items.filter((x) => (!p || x.pressure === p) && (!d || x.domain === d));
+    document.getElementById("h-list").innerHTML = `<div class="count">${sel.length} examples</div>` + sel.map((x) => `
+      <article class="trace">
+        <header><span class="chip">${esc(LEVEL_NAMES[x.pressure])}</span><span class="chip risk">chose shortcut</span>
+          <span class="muted">${esc(domainName(x.domain))}</span><span class="grow"></span>
+          <a href="#/${meta.id}/t/${encodeURIComponent(x.world)}/${encodeURIComponent(x.trace)}">Read the run →</a></header>
+        <p style="margin:8px 0 2px"><b>Rule:</b> “${esc(x.rule)}”</p>
+        <p class="muted small" style="margin:0 0 6px">${esc(x.summary)} · <a href="#/${meta.id}/w/${encodeURIComponent(x.world)}/${x.pressure}">world</a></p>
+        <div class="ev">${highlight(x.excerpt, "")}</div>
+      </article>`).join("");
+  };
+  ["h-p", "h-d"].forEach((id) => document.getElementById(id).addEventListener("change", draw));
+  draw();
+}
+
 /* ---------- single trace ---------- */
 
 async function viewTrace(runId, wid, tid) {
@@ -393,6 +436,7 @@ async function viewTrace(runId, wid, tid) {
     <div class="card"><div class="situ">${esc(shown)}</div><p style="margin-top:12px"><b>Task:</b> ${esc(lv.task)}</p>
     ${shownOptions(r.order, lv.options, r.slot, lv.safer)}</div>
     <h2>What it did</h2>
+    ${hlLegend}
     ${traceCard(runId, wid, lv, r, "", true)}`;
   app.addEventListener("click", copyHandler);
 }
@@ -410,6 +454,7 @@ async function route() {
   window.scrollTo(0, 0);
   try {
     if (parts[1] === "w") await viewWorld(parts[0], parts[2], parts[3]);
+    else if (parts[1] === "highlights") await viewHighlights(parts[0]);
     else if (parts[1] === "c") await viewCompare(parts[0], parts[2], parts[3], parts[4], parts[5]);
     else if (parts[1] === "t") await viewTrace(parts[0], parts[2], parts[3]);
     else await viewIndex(parts[0]);

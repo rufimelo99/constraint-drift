@@ -80,6 +80,8 @@ a.row:hover { text-decoration: none; background: color-mix(in srgb, var(--panel)
 .trace summary { cursor: pointer; font-size: 13px; color: var(--muted); }
 .trace pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.5 var(--mono); margin: 8px 0 0; max-height: 520px; overflow: auto; }
 .trace .grow { flex: 1; }
+mark.rd { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+mark.fe { background: color-mix(in srgb, var(--amber) 32%, transparent); }
 mark { background: var(--mark); color: inherit; border-radius: 2px; }
 .note { border-left: 3px solid var(--line); padding: 2px 12px; color: var(--muted); font-size: 14px; margin: 12px 0; max-width: 72ch; }
 .tbl { overflow-x: auto; }

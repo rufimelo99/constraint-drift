@@ -4,6 +4,7 @@ A static browser for the scenarios and model trajectories of the blocker-shift s
 
 - **Index:** every candidate world (kept or dropped), with filters, grouping, sorting and search (optionally over the reasoning).
 - **World page:** the rule, the three urgency levels, the two versions the model saw with the differing lines highlighted, and every trajectory with its monitor label.
+- **Highlights:** examples where the model took the shortcut after arguing the rule forbids less than it appears to.
 - **Trace page:** one trajectory with what the model saw and what it did. Every view has a URL.
 
 Labels come from a second model reading the reasoning and have not been checked by hand.
