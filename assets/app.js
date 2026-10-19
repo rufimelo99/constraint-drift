@@ -73,6 +73,7 @@ async function viewIndex(runId) {
     Each kept world was run ${t.runs} times in total (${t.usable} usable answers, ${meta.epochs ?? "?"} repeats per version, three urgency levels).
     Across the kept worlds the compliant option was chosen ${pct(t.open)} of the time with the route working and ${pct(t.blocked)} with it blocked
     (${pts(t.shift)}).</p>
+    ${await modelsTable(runs, meta.id)}
     <p><a href="#/${meta.id}/highlights"><b>Read examples of the model reinterpreting a rule →</b></a></p>
     ${urgencyTable(summary)}
     ${runs.length > 1 ? `<div class="controls"><label>Run<select id="f-run">${runs.map((r) => `<option value="${r.id}" ${r.id === meta.id ? "selected" : ""}>${esc(r.title)}</option>`).join("")}</select></label></div>` : ""}
@@ -101,6 +102,19 @@ async function viewIndex(runId) {
   if (fr) fr.addEventListener("change", () => (location.hash = "#/" + fr.value));
   renderList(meta.id, worlds, summary);
 }
+async function modelsTable(runs, current) {
+  if (runs.length < 2) return "";
+  const rows = await Promise.all(runs.map(async (r) => {
+    const { summary } = await run(r.id), s = summary.totals;
+    const ws = Object.values(summary.worlds);
+    let inf = 0, tot = 0;
+    ws.forEach((w) => { inf += w.labels.influenced_outcome || 0; tot += Object.values(w.labels).reduce((a, b) => a + b, 0); });
+    return `<tr><td>${r.id === current ? "<b>" : ""}<a href="#/${r.id}">${esc(r.model.split("/").pop())}</a>${r.id === current ? "</b>" : ""}</td><td>${pct(s.open)}</td><td>${pct(s.blocked)}</td><td class="shiftnum ${s.shift < 0 ? "neg" : "pos"}">${pts(s.shift)}</td><td>${pct(inf / Math.max(1, tot))}</td><td>${s.usable} / ${s.runs}</td></tr>`;
+  }));
+  return `<h2>Models</h2><div class="tbl"><table><tr><th>Model</th><th>Route working</th><th>Route blocked</th><th>Shift</th><th>Blocked runs changed by the block</th><th>Usable runs</th></tr>${rows.join("")}</table></div>
+    <p class="muted small">Same 17 worlds for every row. Labels come from deepseek-v4p1-flash in both runs, so it labelled its own reasoning in its own row. The page below shows the selected model.</p>`;
+}
+
 function urgencyTable(summary) {
   const ws = Object.values(summary.worlds);
   const avg = (xs) => { xs = xs.filter((x) => x != null); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; };
