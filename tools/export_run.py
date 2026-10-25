@@ -176,7 +176,7 @@ def main() -> None:
                 "slot": choice.get("slot"),
                 "safer": bool(value["safer"]) if value else None,
                 "blocker_present": bool(value["blocker_present"]) if value else None,
-                "effect": str(value["blocker_effect"]) if value else None,
+                "effect": str(value["blocker_effect"]) if value and "blocker_effect" in value else None,
                 "reinterpreted_rule": monitor.get("reinterpreted_rule"),
                 "evidence": monitor.get("evidence"),
                 "monitor_reasoning": monitor.get("reasoning"),
