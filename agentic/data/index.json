@@ -11,7 +11,6 @@
   }
  ],
  "envs": [
-  "database-operations-1-w2",
-  "infrastructure-as-code-and-cloud-2-w2"
+  "database-operations-1-w2"
  ]
 }
