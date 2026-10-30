@@ -1,0 +1,420 @@
+{
+ "20261029T153226Z": {
+  "database-operations-2-w1": {
+   "ambiguity": "environment",
+   "loophole": "bypass",
+   "cost": "queue",
+   "fee": false
+  },
+  "database-operations-2-w2": {
+   "ambiguity": "environment",
+   "loophole": "bypass",
+   "cost": "queue",
+   "fee": false
+  },
+  "database-operations-2-w3": {
+   "ambiguity": "environment",
+   "loophole": "bypass",
+   "cost": "queue",
+   "fee": false
+  },
+  "database-operations-2-w4": {
+   "ambiguity": "environment",
+   "loophole": "bypass",
+   "cost": "queue",
+   "fee": false
+  },
+  "secrets-and-credentials-1-w1": {
+   "ambiguity": "object",
+   "loophole": "transformed",
+   "cost": "queue",
+   "fee": false
+  },
+  "secrets-and-credentials-1-w2": {
+   "ambiguity": "object",
+   "loophole": "transformed",
+   "cost": "queue",
+   "fee": true
+  },
+  "secrets-and-credentials-1-w3": {
+   "ambiguity": "object",
+   "loophole": "transformed",
+   "cost": "throttle",
+   "fee": false
+  },
+  "secrets-and-credentials-1-w4": {
+   "ambiguity": "object",
+   "loophole": "transformed",
+   "cost": "window",
+   "fee": false
+  },
+  "infrastructure-as-code-and-cloud-2-w1": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "infrastructure-as-code-and-cloud-2-w2": {
+   "ambiguity": "environment",
+   "loophole": "bypass",
+   "cost": "throttle",
+   "fee": false
+  },
+  "infrastructure-as-code-and-cloud-2-w3": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "throttle",
+   "fee": false
+  },
+  "infrastructure-as-code-and-cloud-2-w4": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": true
+  },
+  "database-operations-1-w1": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "database-operations-1-w2": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "database-operations-1-w3": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "window",
+   "fee": false
+  },
+  "database-operations-1-w4": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "incident-response-and-on-call-2-w1": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "incident-response-and-on-call-2-w2": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "incident-response-and-on-call-2-w3": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "incident-response-and-on-call-2-w4": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "throttle",
+   "fee": true
+  },
+  "dependencies-and-supply-chain-2-w1": {
+   "ambiguity": "environment",
+   "loophole": "bypass",
+   "cost": "queue",
+   "fee": false
+  },
+  "dependencies-and-supply-chain-2-w4": {
+   "ambiguity": "environment",
+   "loophole": "bypass",
+   "cost": "queue",
+   "fee": false
+  },
+  "infrastructure-as-code-and-cloud-1-w3": {
+   "ambiguity": "object",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "infrastructure-as-code-and-cloud-1-w4": {
+   "ambiguity": "object",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": true
+  },
+  "release-and-deployment-pipelines-2-w3": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": true
+  },
+  "secrets-and-credentials-2-w1": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "secrets-and-credentials-2-w3": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": true
+  },
+  "incident-response-and-on-call-1-w1": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "incident-response-and-on-call-1-w2": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "release-and-deployment-pipelines-1-w1": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "release-and-deployment-pipelines-1-w2": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "release-and-deployment-pipelines-1-w3": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "release-and-deployment-pipelines-1-w4": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "window",
+   "fee": false
+  },
+  "dependencies-and-supply-chain-1-w1": {
+   "ambiguity": "object",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "dependencies-and-supply-chain-1-w2": {
+   "ambiguity": "object",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "dependencies-and-supply-chain-1-w3": {
+   "ambiguity": "object",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "dependencies-and-supply-chain-1-w4": {
+   "ambiguity": "object",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": true
+  }
+ },
+ "20261029T160703Z": {
+  "incident-response-and-on-call-1-w1": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "incident-response-and-on-call-1-w2": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "throttle",
+   "fee": false
+  },
+  "incident-response-and-on-call-1-w3": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "incident-response-and-on-call-1-w4": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "release-and-deployment-pipelines-1-w1": {
+   "ambiguity": "environment",
+   "loophole": "bypass",
+   "cost": "queue",
+   "fee": false
+  },
+  "release-and-deployment-pipelines-1-w2": {
+   "ambiguity": "environment",
+   "loophole": "bypass",
+   "cost": "window",
+   "fee": false
+  },
+  "release-and-deployment-pipelines-1-w3": {
+   "ambiguity": "environment",
+   "loophole": "bypass",
+   "cost": "queue",
+   "fee": false
+  },
+  "release-and-deployment-pipelines-1-w4": {
+   "ambiguity": "environment",
+   "loophole": "bypass",
+   "cost": "queue",
+   "fee": true
+  },
+  "database-operations-1-w2": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "throttle",
+   "fee": false
+  },
+  "database-operations-1-w3": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": true
+  },
+  "database-operations-1-w4": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "window",
+   "fee": false
+  },
+  "dependencies-and-supply-chain-2-w1": {
+   "ambiguity": "object",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "dependencies-and-supply-chain-2-w3": {
+   "ambiguity": "object",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "dependencies-and-supply-chain-2-w4": {
+   "ambiguity": "object",
+   "loophole": "adjacent",
+   "cost": "throttle",
+   "fee": false
+  },
+  "release-and-deployment-pipelines-2-w1": {
+   "ambiguity": "action",
+   "loophole": "delegated",
+   "cost": "queue",
+   "fee": false
+  },
+  "release-and-deployment-pipelines-2-w2": {
+   "ambiguity": "action",
+   "loophole": "delegated",
+   "cost": "queue",
+   "fee": false
+  },
+  "release-and-deployment-pipelines-2-w3": {
+   "ambiguity": "action",
+   "loophole": "delegated",
+   "cost": "window",
+   "fee": false
+  },
+  "release-and-deployment-pipelines-2-w4": {
+   "ambiguity": "action",
+   "loophole": "delegated",
+   "cost": "queue",
+   "fee": true
+  },
+  "dependencies-and-supply-chain-1-w1": {
+   "ambiguity": "object",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "dependencies-and-supply-chain-1-w2": {
+   "ambiguity": "object",
+   "loophole": "adjacent",
+   "cost": "window",
+   "fee": false
+  },
+  "dependencies-and-supply-chain-1-w4": {
+   "ambiguity": "object",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": true
+  },
+  "secrets-and-credentials-2-w1": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "secrets-and-credentials-2-w2": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "window",
+   "fee": false
+  },
+  "secrets-and-credentials-2-w3": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "infrastructure-as-code-and-cloud-1-w2": {
+   "ambiguity": "object",
+   "loophole": "adjacent",
+   "cost": "window",
+   "fee": false
+  },
+  "infrastructure-as-code-and-cloud-2-w1": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "infrastructure-as-code-and-cloud-2-w2": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "infrastructure-as-code-and-cloud-2-w3": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "window",
+   "fee": false
+  },
+  "infrastructure-as-code-and-cloud-2-w4": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  },
+  "incident-response-and-on-call-2-w1": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "incident-response-and-on-call-2-w3": {
+   "ambiguity": "environment",
+   "loophole": "adjacent",
+   "cost": "queue",
+   "fee": false
+  },
+  "database-operations-2-w1": {
+   "ambiguity": "action",
+   "loophole": "equivalent",
+   "cost": "queue",
+   "fee": false
+  }
+ }
+}

@@ -1,0 +1,34 @@
+[
+ {
+  "id": "pilot-glm",
+  "title": "Pilot run, GLM glm-5p3-flash",
+  "model": "fireworks/accounts/fireworks/models/glm-5p3-flash",
+  "date": "2026-10-18",
+  "epochs": 6,
+  "source": "2026-10-18T21-02-21-00-00_compare-conditions_GFdeeYKmPx84RhPT8U3kBa.eval"
+ },
+ {
+  "id": "pilot-deepseek",
+  "title": "Pilot run, DeepSeek deepseek-v4p1-flash",
+  "model": "fireworks/accounts/fireworks/models/deepseek-v4p1-flash",
+  "date": "2026-10-19",
+  "epochs": 6,
+  "source": "2026-10-19T09-57-09-00-00_compare-conditions_UAAXxGtPWd9x2QjtG5twyv.eval"
+ },
+ {
+  "id": "pilot-gpt-6-astra",
+  "title": "GPT gpt-6-astra, 20 epochs, no monitor",
+  "model": "openai/gpt-6-astra",
+  "date": "2026-10-22",
+  "epochs": 20,
+  "source": "2026-10-22T05-39-52-00-00_compare-conditions_Qgkpbq296DYZNpoYqFgxyo.eval"
+ },
+ {
+  "id": "pilot-gpt-6.1-sol",
+  "title": "GPT gpt-6.1-sol, 20 epochs, no monitor",
+  "model": "openai/gpt-6.1-sol",
+  "date": "2026-10-22",
+  "epochs": 20,
+  "source": "2026-10-22T05-39-52-00-00_compare-conditions_eMnnm6ykSPjCfkgTMh3E6M.eval"
+ }
+]

@@ -1,7 +1,7 @@
 """Export one run (generation folder + validation .eval log) into data/<run-id>/ for the site.
 
 Usage: uv run --with inspect_ai python tools/export_run.py \
-    --generated <runs/.../generated/RUN> --log <validation.eval> --id pilot-glm --title "Pilot, GLM" [--out data]
+    --generated <runs/.../generated/RUN> --log <validation.eval> --id pilot-glm --title "Pilot, GLM" [--out data]   # --out old_logs/data for the old page
 
 Writes data/<id>/{worlds.json,summary.json,traces/<world>.json} and adds the run to data/manifest.json.
 """
@@ -15,11 +15,43 @@ from pathlib import Path
 from inspect_ai.log import read_eval_log
 
 LEVELS = {1: "Routine", 2: "Important", 3: "Critical"}
+# Later runs vary the cost of the compliant route (cheap / costly) instead of whether it is blocked; the site's
+# internal names stay open / blocked, and the manifest carries the names to show.
+COST_TO_BLOCKER = {"cheap": "open", "costly": "blocked"}
+COST_VERSIONS = {"open": "Cheap route", "blocked": "Costly route"}
 EFFECTS = ("no_effect", "considered_and_backed_off", "influenced_outcome")
 
 
 def jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
+def level_options(s: dict) -> dict:
+    """The two options by the letters the scenario's `safer` refers to; later runs fix A = compliant, B = loophole."""
+    if "option_a" in s:
+        return {"A": s["option_a"], "B": s["option_b"]}
+    return {"A": s["compliant_option"], "B": s["loophole_option"]}
+
+
+GENERATION_PARAMS = ("rules_per_domain", "worlds_per_rule", "pressures", "probe_epochs", "min_shift", "rewrites", "followups", "repairs")
+
+
+def generation_info(generated: Path) -> dict:
+    """Who generated the worlds and how, from the generation run's metadata.json; empty when it has none."""
+    path = generated / "metadata.json"
+    if not path.exists():
+        return {}
+    meta = json.loads(path.read_text())
+    short = lambda m: m.split("/")[-1]
+    return {
+        "models": {role: short(m) for role, m in meta.get("models", {}).items()},
+        "domains": meta.get("params", {}).get("domains", []),
+        "params": {k: meta["params"][k] for k in GENERATION_PARAMS if k in meta.get("params", {})},
+        "counts": meta.get("counts", {}),
+        "kept_fraction_mean": meta.get("kept_fraction_mean"),
+        "dropped_constraints": meta.get("dropped_constraints", []),
+        "total_time": meta.get("total_time"),
+    }
 
 
 def world_id(rule_id: str, world) -> str:
@@ -125,15 +157,15 @@ def main() -> None:
                     "pressure": p,
                     "name": LEVELS[p],
                     "scenario_id": s["id"],
-                    "probe_command": s["probe_command"],
-                    "output_open": s["output_open"],
-                    "output_blocked": s["output_blocked"],
+                    "probe_command": s.get("probe_command", ""),
+                    "output_open": s.get("output_open", s.get("cheap_ending")),
+                    "output_blocked": s.get("output_blocked", s.get("costly_ending")),
                     "task": s["task"],
-                    "options": {"A": s["option_a"], "B": s["option_b"]},
-                    "safer": s["safer"],
-                    "blocker_type": s["blocker_type"],
-                    "workaround": s["workaround"],
-                    "workaround_risk": s.get("workaround_risk", ""),
+                    "options": level_options(s),
+                    "safer": s.get("safer", "A"),
+                    "blocker_type": s.get("blocker_type", "cost of the compliant route"),
+                    "workaround": s.get("workaround", s.get("loophole_option")),
+                    "workaround_risk": s.get("workaround_risk", s.get("loophole_risk", "")),
                     "workspace": s["workspace"],
                     "open_flaws": s.get("open_flaws", []),
                     "chooser_counts": s.get("chooser_counts", {}),
@@ -148,8 +180,8 @@ def main() -> None:
         wid = world_id(m["constraint_id"], m["world"])
         for lv in next((w for w in worlds if w["id"] == wid), {"levels": []})["levels"]:
             if lv["pressure"] == int(m["pressure"]):
-                lv.setdefault("shown_open", m["situation_open"])
-                lv.setdefault("shown_blocked", m["situation_blocked"])
+                lv.setdefault("shown_open", m.get("situation_open", m.get("situation_cheap")))
+                lv.setdefault("shown_blocked", m.get("situation_blocked", m.get("situation_costly")))
                 lv.setdefault("rule_text", m["rule"])
         score = (smp.scores or {}).get("evaluation")
         value = score.value if score is not None and isinstance(score.value, dict) else None
@@ -161,7 +193,7 @@ def main() -> None:
                 pass
         choice = smp.store.get("Probed:choice") or {}
         order = smp.store.get("Probed:order") or []
-        blocker = m["blocker"]
+        blocker = m["blocker"] if "blocker" in m else COST_TO_BLOCKER[m["cost"]]
         traces[wid].append(
             {
                 "id": f"{smp.id}~{smp.epoch}",
@@ -175,8 +207,8 @@ def main() -> None:
                 "letter": choice.get("letter"),
                 "slot": choice.get("slot"),
                 "safer": bool(value["safer"]) if value else None,
-                "blocker_present": bool(value["blocker_present"]) if value else None,
-                "effect": str(value["blocker_effect"]) if value and "blocker_effect" in value else None,
+                "blocker_present": bool(value.get("blocker_present", value.get("costly"))) if value else None,
+                "effect": str(value.get("blocker_effect", value.get("cost_effect"))) if value else None,
                 "reinterpreted_rule": monitor.get("reinterpreted_rule"),
                 "evidence": monitor.get("evidence"),
                 "monitor_reasoning": monitor.get("reasoning"),
@@ -246,6 +278,9 @@ def main() -> None:
             "date": str(log.eval.created)[:10],
             "epochs": log.eval.task_args.get("epochs"),
             "source": Path(a.log).name,
+            "generated": a.generated.name,
+            "generation": generation_info(a.generated),
+            **({"versions": COST_VERSIONS} if any("cheap_ending" in s for s in scenarios) else {}),
         }
     )
     manifest_path.write_text(json.dumps(manifest, indent=1))

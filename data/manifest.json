@@ -1,34 +1,157 @@
 [
  {
-  "id": "pilot-glm",
-  "title": "Pilot run, GLM glm-5p3-flash",
+  "id": "gen-20261029-b",
+  "title": "Generated set B: glm-5p3 generator, glm-5p3-flash probed",
   "model": "fireworks/accounts/fireworks/models/glm-5p3-flash",
-  "date": "2026-10-18",
+  "date": "2026-10-30",
   "epochs": 6,
-  "source": "2026-10-18T21-02-21-00-00_compare-conditions_GFdeeYKmPx84RhPT8U3kBa.eval"
+  "source": "2026-10-30T12-05-45-00-00_compare-conditions_L9bdk85jEY96vtTNd4apXW.eval",
+  "versions": {
+   "open": "Cheap route",
+   "blocked": "Costly route"
+  },
+  "generated": "20261029T160703Z",
+  "generation": {
+   "models": {
+    "generator": "glm-5p3",
+    "critic": "kimi-k3",
+    "chooser": "kimi-k3"
+   },
+   "domains": [
+    "release and deployment pipelines",
+    "database operations",
+    "infrastructure as code and cloud",
+    "secrets and credentials",
+    "dependencies and supply chain",
+    "incident response and on-call"
+   ],
+   "params": {
+    "rules_per_domain": 2,
+    "worlds_per_rule": 4,
+    "pressures": 3,
+    "probe_epochs": 6,
+    "min_shift": 0.3,
+    "rewrites": 1,
+    "followups": 2,
+    "repairs": 1
+   },
+   "counts": {
+    "constraints": 11,
+    "worlds": 48,
+    "worlds_by_stage": {
+     "kept": 32,
+     "no_shift": 14,
+     "critic": 2
+    },
+    "scenarios": 96,
+    "scenarios_attempted": 144
+   },
+   "kept_fraction_mean": 0.667,
+   "dropped_constraints": [
+    "secrets-and-credentials-1"
+   ],
+   "total_time": "0:52:55"
+  }
  },
  {
-  "id": "pilot-deepseek",
-  "title": "Pilot run, DeepSeek deepseek-v4p1-flash",
-  "model": "fireworks/accounts/fireworks/models/deepseek-v4p1-flash",
-  "date": "2026-10-19",
+  "id": "gen-20261029-a",
+  "title": "Generated set A: deepseek-v4p1-flash generator, glm-5p3-flash probed",
+  "model": "fireworks/accounts/fireworks/models/glm-5p3-flash",
+  "date": "2026-10-29",
   "epochs": 6,
-  "source": "2026-10-19T09-57-09-00-00_compare-conditions_UAAXxGtPWd9x2QjtG5twyv.eval"
+  "source": "2026-10-29T16-23-06-00-00_compare-conditions_7CdYJCxuELbsa64zRqewih.eval",
+  "versions": {
+   "open": "Cheap route",
+   "blocked": "Costly route"
+  },
+  "generated": "20261029T153226Z",
+  "generation": {
+   "models": {
+    "generator": "deepseek-v4p1-flash",
+    "critic": "deepseek-v4p1-flash",
+    "chooser": "glm-5p3-flash"
+   },
+   "domains": [
+    "release and deployment pipelines",
+    "database operations",
+    "infrastructure as code and cloud",
+    "secrets and credentials",
+    "dependencies and supply chain",
+    "incident response and on-call"
+   ],
+   "params": {
+    "rules_per_domain": 2,
+    "worlds_per_rule": 4,
+    "pressures": 3,
+    "probe_epochs": 6,
+    "min_shift": 0.3,
+    "rewrites": 1,
+    "followups": 2,
+    "repairs": 1
+   },
+   "counts": {
+    "constraints": 12,
+    "worlds": 48,
+    "scenarios": 111,
+    "scenarios_attempted": 144
+   },
+   "kept_fraction_mean": 0.771,
+   "dropped_constraints": [],
+   "total_time": "0:40:51"
+  }
  },
  {
-  "id": "pilot-gpt-6-astra",
-  "title": "GPT gpt-6-astra, 20 epochs, no monitor",
-  "model": "openai/gpt-6-astra",
-  "date": "2026-10-22",
-  "epochs": 20,
-  "source": "2026-10-22T05-39-52-00-00_compare-conditions_Qgkpbq296DYZNpoYqFgxyo.eval"
- },
- {
-  "id": "pilot-gpt-6.1-sol",
-  "title": "GPT gpt-6.1-sol, 20 epochs, no monitor",
-  "model": "openai/gpt-6.1-sol",
-  "date": "2026-10-22",
-  "epochs": 20,
-  "source": "2026-10-22T05-39-52-00-00_compare-conditions_eMnnm6ykSPjCfkgTMh3E6M.eval"
+  "id": "gen-20261029-b-kimi",
+  "title": "Generated set B: glm-5p3 generator, kimi-k3 probed",
+  "model": "fireworks/accounts/fireworks/models/kimi-k3",
+  "date": "2026-10-30",
+  "epochs": 6,
+  "source": "2026-10-30T12-16-04-00-00_compare-conditions_haQ62RLhS22yiJwM6yHPV8.eval",
+  "generated": "20261029T160703Z",
+  "versions": {
+   "open": "Cheap route",
+   "blocked": "Costly route"
+  },
+  "generation": {
+   "models": {
+    "generator": "glm-5p3",
+    "critic": "kimi-k3",
+    "chooser": "kimi-k3"
+   },
+   "domains": [
+    "release and deployment pipelines",
+    "database operations",
+    "infrastructure as code and cloud",
+    "secrets and credentials",
+    "dependencies and supply chain",
+    "incident response and on-call"
+   ],
+   "params": {
+    "rules_per_domain": 2,
+    "worlds_per_rule": 4,
+    "pressures": 3,
+    "probe_epochs": 6,
+    "min_shift": 0.3,
+    "rewrites": 1,
+    "followups": 2,
+    "repairs": 1
+   },
+   "counts": {
+    "constraints": 11,
+    "worlds": 48,
+    "worlds_by_stage": {
+     "kept": 32,
+     "no_shift": 14,
+     "critic": 2
+    },
+    "scenarios": 96,
+    "scenarios_attempted": 144
+   },
+   "kept_fraction_mean": 0.667,
+   "dropped_constraints": [
+    "secrets-and-credentials-1"
+   ],
+   "total_time": "0:52:55"
+  }
  }
 ]
