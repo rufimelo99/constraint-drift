@@ -149,7 +149,7 @@ function generationBox(meta) {
   const c = g.counts || {}, p = g.params || {}, st = c.worlds_by_stage || {};
   const stages = Object.entries(st).map(([k, n]) => `${n} ${k.replace(/_/g, " ")}`).join(", ");
   return `<details class="note" open><summary><b>How these worlds were generated</b></summary>
-    <dl class="meta">
+    <dl class="genmeta">
       <dt>Generator</dt><dd>${esc(g.models.generator)} <span class="muted">writes the rules and worlds</span></dd>
       <dt>Critic</dt><dd>${esc(g.models.critic)} <span class="muted">looks for flaws in a world</span></dd>
       <dt>Chooser</dt><dd>${esc(g.models.chooser)} <span class="muted">answers the screening probes (${p.probe_epochs ?? "?"} repeats); a world is kept only if the choice shifts by at least ${pts(p.min_shift)}</span></dd>
@@ -222,7 +222,9 @@ async function renderList(runId, worlds, summary) {
 }
 
 function worldRow(runId, w, s, hit) {
-  const title = `<div class="t">${esc(w.summary)}</div><div class="meta">${esc(w.rule.text)} · ${esc(domainName(w.domain))}${hit ? ` · <mark>${hit} runs match</mark>` : ""}</div>`;
+  const lines = `<div class="t">${esc(w.summary)}</div><div class="meta">${esc(w.rule.text)} · ${esc(domainName(w.domain))}${hit ? ` · <mark>${hit} runs match</mark>` : ""}</div>`;
+  // One grid cell for both lines. The old-logs page keeps its original markup, which spreads them over two cells.
+  const title = OLD ? lines : `<div>${lines}</div>`;
   if (!w.kept || !s) {
     const c = w.screen || {};
     const f = (v) => Object.entries(v || {}).map(([k, n]) => `${k}${n}`).join(" ") || "–";

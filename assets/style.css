@@ -97,9 +97,9 @@ th { font-weight: 500; color: var(--muted); }
 .oldbanner { margin: 0; padding: 8px 16px; background: var(--mark); color: var(--fg); font-size: 13px; text-align: center; }
 a.ghost { text-decoration: none; }
 .top .ghost + .ghost { margin-left: auto; }
-.meta { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 8px 0 0; }
-.meta dt { color: var(--muted); }
-.meta dd { margin: 0; }
+.genmeta { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 8px 0 0; }
+.genmeta dt { color: var(--muted); }
+.genmeta dd { margin: 0; }
 details.note summary { cursor: pointer; }
 tr.sig td { background: var(--mark); }
 
