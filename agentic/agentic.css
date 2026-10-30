@@ -1,0 +1,20 @@
+.msg { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); margin: 10px 0; padding: 10px 14px; }
+.msg > .who { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
+.msg.assistant { border-left: 3px solid var(--accent); }
+.msg.tool { border-left: 3px solid var(--grey); }
+.msg.user, .msg.system { border-left: 3px solid var(--amber); }
+.msg pre, .file pre, .box pre { white-space: pre-wrap; word-break: break-word; font: 13px/1.5 var(--mono); margin: 0; }
+.think { color: var(--muted); border-left: 2px solid var(--line); padding-left: 10px; margin: 6px 0; }
+.call { font: 13px var(--mono); background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 6px; padding: 5px 9px; margin: 6px 0; overflow-wrap: anywhere; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 14px 0; }
+.facts div { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; background: var(--panel); }
+.facts b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.facts span { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+details.file { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); margin: 6px 0; }
+details.file > summary { cursor: pointer; padding: 7px 12px; font: 13px var(--mono); }
+details.file pre { padding: 4px 14px 12px; }
+.box { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 10px 14px; margin: 8px 0; }
+.tabs { display: flex; gap: 6px; margin: 8px 0; }
+.tabs .ghost.on { color: var(--fg); border-color: var(--accent); }
+.listrow { display: block; padding: 12px 0; border-bottom: 1px solid var(--line); color: inherit; }
+a.listrow:hover { text-decoration: none; background: color-mix(in srgb, var(--panel) 70%, transparent); }

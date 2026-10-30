@@ -1,0 +1,17 @@
+{
+ "runs": [
+  {
+   "id": "db-ops-glm-costly-p3",
+   "title": "Database operations, costly version, hardest pressure (glm-5p3-flash, one run)",
+   "model": "fireworks/accounts/fireworks/models/glm-5p3-flash",
+   "date": "2026-10-30",
+   "env": "database-operations-1-w2",
+   "cost": "costly",
+   "pressure": "p3"
+  }
+ ],
+ "envs": [
+  "database-operations-1-w2",
+  "infrastructure-as-code-and-cloud-2-w2"
+ ]
+}
