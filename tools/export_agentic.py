@@ -2,6 +2,7 @@
 
 Usage: uv run --with inspect_ai --with pyyaml python tools/export_agentic.py \
     --log <agentic.eval> --envs <environments/ID> [<environments/ID> ...] --id db-ops-glm-costly-p3 --title "..."
+Add --all to export every sample of the log as its own run (ids `<id>--<env>--<cost>-<pressure>`); without it only the first.
 
 Writes agentic/data/runs/<id>.json (the trajectory and its outcome), agentic/data/envs/<env id>.json (only what the
 evaluated agent has access to) and agentic/data/index.json. Never exported: oracle.py, README.md, tools/world.py,
@@ -81,12 +82,17 @@ def export_message(m) -> dict:
     return out
 
 
-def export_run(log_path: Path, run_id: str, title: str) -> dict:
-    log = read_eval_log(str(log_path))
-    sample = log.samples[0]
+def route_of(outcome: dict) -> str:
+    """Which route an outcome records: the first (compliant), the second (loophole) or neither."""
+    return "first" if outcome.get("compliant") else "second" if outcome.get("loophole") else "neither"
+
+
+def export_run(log, log_path: Path, sample, run_id: str, title: str, experiment: str) -> dict:
+    """One sample of an agentic log as a run."""
     meta = sample.metadata["metadata"]
     return {
         "id": run_id,
+        "experiment": experiment,
         "title": title,
         "model": log.eval.model,
         "date": log.eval.created[:10],
@@ -101,26 +107,45 @@ def export_run(log_path: Path, run_id: str, title: str) -> dict:
     }
 
 
+def runs_of(log_path: Path, run_id: str, title: str, every_sample: bool) -> list[dict]:
+    """The log's first sample as run `run_id`, or with `every_sample` each sample as a run named after its cell."""
+    log = read_eval_log(str(log_path))
+    if not every_sample:
+        return [export_run(log, log_path, log.samples[0], run_id, title, run_id)]
+    runs = []
+    for sample in log.samples:
+        meta = sample.metadata["metadata"]
+        cell = f"{meta['env_id']}--{meta['cost']}-{meta['pressure']}"
+        label = f"{meta['env_id']}, {meta['cost']} cost, {meta['pressure']}"
+        runs.append(export_run(log, log_path, sample, f"{run_id}--{cell}", f"{title}: {label}", run_id))
+    return runs
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--log", type=Path, required=True)
     parser.add_argument("--envs", type=Path, nargs="+", required=True)
     parser.add_argument("--id", required=True)
     parser.add_argument("--title", required=True)
+    parser.add_argument("--all", action="store_true", help="export every sample of the log, not only the first")
     args = parser.parse_args()
     for sub in ("runs", "envs"):
         (OUT / sub).mkdir(parents=True, exist_ok=True)
-    run = export_run(args.log, args.id, args.title)
-    (OUT / "runs" / f"{args.id}.json").write_text(json.dumps(run, indent=1))
-    for env_dir in args.envs:
-        env = export_env(env_dir)
+    runs = runs_of(args.log, args.id, args.title, args.all)
+    for run in runs:
+        (OUT / "runs" / f"{run['id']}.json").write_text(json.dumps(run, indent=1))
+    exported = [export_env(env_dir) for env_dir in args.envs]
+    for env in exported:
         (OUT / "envs" / f"{env['id']}.json").write_text(json.dumps(env, indent=1))
     index_path = OUT / "index.json"
     index = json.loads(index_path.read_text()) if index_path.exists() else {"runs": [], "envs": []}
-    index["runs"] = [r for r in index["runs"] if r["id"] != args.id] + [
-        {k: run[k] for k in ("id", "title", "model", "date", "env", "cost", "pressure")}
+    ids = {run["id"] for run in runs}
+    index["runs"] = [r for r in index["runs"] if r["id"] not in ids] + [
+        {k: run[k] for k in ("id", "experiment", "title", "model", "date", "env", "cost", "pressure")}
+        | {"route": route_of(run["outcome"]), "goal_reached": bool(run["outcome"].get("goal_reached"))}
+        for run in runs
     ]
-    index["envs"] = sorted({*index["envs"], *(export_env(e)["id"] for e in args.envs)})
+    index["envs"] = sorted({*index["envs"], *(env["id"] for env in exported)})
     index_path.write_text(json.dumps(index, indent=1))
     print(f"wrote {OUT}")
 
