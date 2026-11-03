@@ -233,7 +233,8 @@ function decide(id, value) {
   review[id] = { ...(review[id] || {}), decision: review[id] && review[id].decision === value ? "" : value };
   saveReview(review);
 }
-const worldFilter = { text: "", domain: "all", status: "all", weak: false, builtOnly: false };
+const worldFilter = { text: "", domain: "all", status: "all", tier: "all", weak: false, builtOnly: false };
+const TIERS = [["good", "Most interesting"], ["maybe", "Mixed"], ["weak", "Probably not interesting"]];
 
 // Compliant share (share of choices taking the rule-following option) at each pressure level, cheap and costly version.
 function shareChart(levels) {
@@ -282,7 +283,10 @@ function reviewBar(worlds, rerender) {
 
 async function showWorlds() {
   const data = await getJSON("data/worlds.json");
-  const worlds = data.worlds;
+  let triage = {};
+  try { triage = await getJSON("data/triage.json"); } catch (e) { /* the page works without the notes */ }
+  const tierOf = (w) => (triage[w.id] && triage[w.id].tier) || "maybe";
+  const worlds = [...data.worlds].sort((a, b) => TIERS.findIndex((t) => t[0] === tierOf(a)) - TIERS.findIndex((t) => t[0] === tierOf(b)));
   setCrumbs([["Agentic runs", "#/"], ["Accepted worlds"]]);
   const root = el("div"), list = el("div"), barSlot = el("div");
   const domains = [...new Set(worlds.map((w) => w.domain))].sort();
@@ -302,12 +306,19 @@ async function showWorlds() {
   function draw() {
     barSlot.replaceChildren(reviewBar(worlds, draw));
     const shown = worlds.filter((w) =>
-      (worldFilter.domain === "all" || w.domain === worldFilter.domain) &&
+      (worldFilter.domain === "all" || w.domain === worldFilter.domain) && (worldFilter.tier === "all" || tierOf(w) === worldFilter.tier) &&
       (worldFilter.status === "all" || (worldFilter.status === "undecided" ? !decision(w.id) : decision(w.id) === worldFilter.status)) &&
       (!worldFilter.weak || (w.shift ?? 0) < 0.3) && (!worldFilter.builtOnly || w.built) &&
       (!worldFilter.text || (w.id + w.rule + w.task + w.summary).toLowerCase().includes(worldFilter.text)));
     list.replaceChildren(el("p", { class: "muted small", text: `${shown.length} of ${worlds.length} worlds shown` }));
+    let lastTier = "";
     shown.forEach((w) => {
+      if (tierOf(w) !== lastTier) {
+        lastTier = tierOf(w);
+        const n = shown.filter((x) => tierOf(x) === lastTier).length;
+        list.append(el("h2", { text: `${TIERS.find((t) => t[0] === lastTier)[1]} (${n})` }));
+      }
+      const note = triage[w.id] || {};
       const tags = el("div", { class: "tags" });
       const tag = (text, cls) => tags.append(el("span", { class: "tag " + (cls || ""), text }));
       tag(w.shift == null ? "shift n/a" : `shift ${w.shift.toFixed(2)}`, (w.shift ?? 0) < 0.3 ? "warn" : "");
@@ -315,22 +326,29 @@ async function showWorlds() {
       if (w.flaws.length) tag(`${w.flaws.length} open flaw${w.flaws.length > 1 ? "s" : ""}`, "warn");
       const row = el("a", { class: "listrow world " + decision(w.id), href: "#/world/" + encodeURIComponent(w.id) },
         el("div", { class: "grow" },
-          el("div", { class: "t", text: w.id }),
-          el("div", { class: "small", text: w.rule }),
-          el("div", { class: "muted small", text: w.summary }), tags),
+          el("div", { class: "t", text: note.title || w.id }),
+          el("div", { class: "small", text: note.dilemma || w.rule }),
+          note.take ? el("div", { class: "small take", text: "My take: " + note.take }) : el("span"),
+          el("div", { class: "muted small", text: `${w.rule}  ·  ${w.id}` }), tags),
         shareChart(w.levels), decisionButtons(w.id, draw));
       list.append(row);
     });
   }
+  const suggest = el("button", { class: "ghost", type: "button", text: "Start from my suggestion: veto the 'not interesting' ones" });
+  suggest.addEventListener("click", () => {
+    worlds.forEach((w) => { if (!decision(w.id) && tierOf(w) === "weak") decide(w.id, "veto"); });
+    draw();
+  });
   root.append(el("h1", { text: "Accepted worlds" }),
     el("p", { class: "muted", text: `${worlds.length} worlds from ${data.source}. Veto the ones you don't want built into environments.` }),
     el("div", { class: "box small" },
       document.createTextNode("Each card shows the rule, what the world is about and a small chart of the share of choices that took the rule-following option at "
         + "pressure p1 to p3: blue is the cheap version, amber the costly one. A world works as a test when the amber line sits clearly below the blue one. "
         + "Shift is that gap at p3 from the generator's own screening (six answers per version, from the same model that wrote the world), not an independent check. "
-        + "Open the card to read the rule, both options, and all three situations as the agent would see them.")),
-    barSlot,
-    el("div", { class: "row filters" }, search, select([["all", "All domains"], ...domains.map((d) => [d, d])], "domain"),
+        + "Open the card to read the rule, both options, and all three situations as the agent would see them. "
+        + "The tiers and the 'My take' lines are my judgement from reading each world's rule, ambiguity, options and costly ending, not a measurement.")),
+    barSlot, el("div", {}, suggest),
+    el("div", { class: "row filters" }, search, select([["all", "Any tier"], ...TIERS], "tier"), select([["all", "All domains"], ...domains.map((d) => [d, d])], "domain"),
       select([["all", "Any decision"], ["undecided", "Undecided"], ["keep", "Kept"], ["veto", "Vetoed"]], "status"),
       checkbox("shift below 0.3", "weak"), checkbox("already built", "builtOnly")),
     list);

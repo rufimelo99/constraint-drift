@@ -38,3 +38,5 @@ table.an th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em;
 .warnbox { border-color: var(--amber); }
 .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
 textarea { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: inherit; }
+
+.take { color: var(--muted); font-style: italic; margin-top: 2px; }
