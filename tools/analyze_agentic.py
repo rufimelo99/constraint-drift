@@ -21,6 +21,16 @@ import statsmodels.formula.api as smf
 from statsmodels.discrete.conditional_models import ConditionalLogit
 
 DATA = Path("agentic/data")
+# Environments left out of an experiment's analysis, with the reason shown on the page. The runs stay published.
+EXCLUDED_ENVS: dict[str, dict[str, str]] = {
+    "env-release-20261102-glm": {
+        "release-and-deployment-pipelines-2-w3-20261030t230643z": (
+            "All 6 runs called tools of another world (devctl_*, fleetctl_device, fleetctl_presence_estimate), not the kiosk "
+            "tools this environment defines. Its tools image is tagged cv-env-release-deploy-2-w3-tools, the same tag as "
+            "release-and-deployment-pipelines-2-w3-20261031t000048z, which is the likely cause. The runs say nothing about this world."
+        )
+    }
+}
 
 
 def load_runs(experiment: str) -> pd.DataFrame:
@@ -69,6 +79,9 @@ def route_models(routed: pd.DataFrame) -> list[dict]:
     out.append({
         "id": "interaction", "title": "Does pressure matter more when compliance is costly?", "outcome": "loophole (vs compliant)",
         "n": int(m.nobs), "clusters": int(routed.env.nunique()), "pseudo_r2": float(m.prsquared),
+        "note": "In the cheap version the loophole counts at p1, p2, p3 are 4, 2, 4 (the two environments that change route go "
+                "loophole, compliant, loophole), so the fitted slope is exactly 1 and its interval (1.00 to 1.00) is a numerical "
+                "artifact of the clustered errors, not precision. Only the second term carries information.",
         "terms": [term("Pressure, per level, cheap version", "one level lower", m.params, ci, m.pvalues, "p", "odds"),
                   term("Extra per level when costly", "the cheap version's slope", m.params, ci, m.pvalues, "costly:p", "odds")],
     })
@@ -89,12 +102,20 @@ def route_models(routed: pd.DataFrame) -> list[dict]:
 
 def other_models(df: pd.DataFrame) -> list[dict]:
     """Whether the goal was reached, and the simulated minutes spent, over every run."""
-    m = clustered("goal ~ costly + p", df, "logit")
-    ci = m.conf_int()
-    goal = {"id": "goal", "title": "Was the goal reached?", "outcome": "goal reached", "n": int(m.nobs),
-            "clusters": int(df.env.nunique()), "pseudo_r2": float(m.prsquared),
-            "terms": [term("Costly version", "cheap version", m.params, ci, m.pvalues, "costly", "odds"),
-                      term("Pressure, per level", "one level lower", m.params, ci, m.pvalues, "p", "odds")]}
+    goal = {"id": "goal", "title": "Was the goal reached?", "outcome": "goal reached", "n": int(len(df)),
+            "clusters": int(df.env.nunique()), "pseudo_r2": None, "terms": []}
+    if (df.groupby("costly").goal.agg(["min", "max"]).nunique(axis=1) == 1).any():  # a level where every run has the same value
+        reached = {c: f"{int(v.goal.sum())} of {len(v)}" for c, v in df.groupby("costly")}
+        goal["note"] = (f"Not estimated: the goal was reached in {reached[0]} cheap runs and {reached[1]} costly runs, so one level "
+                        "has no variation and the odds ratio is unbounded. See the counts in the rate tables.")
+        goal_model = None
+    else:
+        goal_model = clustered("goal ~ costly + p", df, "logit")
+    if goal_model is not None:
+        ci = goal_model.conf_int()
+        goal["pseudo_r2"] = float(goal_model.prsquared)
+        goal["terms"] = [term("Costly version", "cheap version", goal_model.params, ci, goal_model.pvalues, "costly", "odds"),
+                         term("Pressure, per level", "one level lower", goal_model.params, ci, goal_model.pvalues, "p", "odds")]
     m = clustered("np.log(minutes) ~ costly + p", df, "ols")
     ci = m.conf_int()
     minutes = {"id": "minutes", "title": "Simulated minutes spent", "outcome": "minutes (log scale; ratios of the mean)",
@@ -125,12 +146,16 @@ def tables(df: pd.DataFrame) -> dict:
 
 
 def main(experiment: str) -> None:
+    excluded = EXCLUDED_ENVS.get(experiment, {})
     df = load_runs(experiment)
+    left_out = int(df.env.isin(excluded).sum())
+    df = df[~df.env.isin(excluded)]
     routed = df[df.loophole + df.compliant == 1]
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         models = route_models(routed) + other_models(df)
     out = {"experiment": experiment, "runs": int(len(df)), "routed": int(len(routed)), "environments": int(df.env.nunique()),
+           "excluded": [{"env": env, "reason": why} for env, why in excluded.items()], "excluded_runs": left_out,
            "tables": tables(df), "models": models}
     (DATA / "analysis.json").write_text(json.dumps(out, indent=1))
     for m in models:

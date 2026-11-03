@@ -21,3 +21,20 @@ a.listrow:hover { text-decoration: none; background: color-mix(in srgb, var(--pa
 table.an { border-collapse: collapse; margin: 8px 0 14px; font-size: 14px; font-variant-numeric: tabular-nums; }
 table.an th, table.an td { border-bottom: 1px solid var(--line); padding: 5px 12px 5px 0; text-align: left; }
 table.an th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.sticky { position: sticky; top: 0; z-index: 5; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
+.filters input[type=search], .filters select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: inherit; }
+.listrow.world { display: flex; gap: 14px; align-items: center; }
+.listrow.world .grow { flex: 1; min-width: 0; }
+.listrow.world.veto { opacity: .55; }
+.listrow.world.veto .t { text-decoration: line-through; }
+.listrow.world.keep { border-left: 3px solid var(--accent); padding-left: 10px; }
+.decide { display: flex; gap: 6px; }
+.on-keep { border-color: var(--accent) !important; color: var(--accent) !important; font-weight: 600; }
+.on-veto { border-color: #c0392b !important; color: #c0392b !important; font-weight: 600; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.tag { font-size: 11px; border: 1px solid var(--line); border-radius: 10px; padding: 1px 8px; color: var(--muted); }
+.tag.warn { border-color: var(--amber); color: var(--amber); }
+.warnbox { border-color: var(--amber); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+textarea { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: inherit; }

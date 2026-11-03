@@ -38,6 +38,7 @@ async function showIndex() {
     el("h1", { text: "Agentic runs" }),
     el("p", { text: "A model works inside a built environment: a shell, some files and a few tools. These pages show one run step by step and the environment exactly as the model met it." }),
     el("p", {}, el("a", { href: "#/analysis" }, el("b", { text: "Multivariate analysis of the latest experiment →" }))),
+    el("p", {}, el("a", { href: "#/worlds" }, el("b", { text: "Review the 50 accepted worlds and veto the ones you don't want built →" }))),
     el("h2", { text: "Runs" }),
   );
   // Runs of one experiment are grouped by environment; a run without an experiment stands alone.
@@ -181,6 +182,7 @@ function modelNode(m) {
   node.append(el("h3", { text: m.title }),
     el("p", { class: "muted small", text: `Outcome: ${m.outcome} · ${m.n} runs · ${m.clusters} environments` + (m.pseudo_r2 != null ? ` · pseudo R² ${m.pseudo_r2.toFixed(2)}` : "") }));
   if (m.note) node.append(el("p", { class: "small", text: m.note }));
+  if (!m.terms.length) return node;
   node.append(forest(m.terms),
     table(["term", "vs", "ratio", "95% interval", "p"], m.terms.map((t) => [t.name, t.ref, fmtRatio(t.ratio) + "×", `${fmtRatio(t.lo)} to ${fmtRatio(t.hi)}`, fmtP(t.p)])));
   return node;
@@ -199,6 +201,9 @@ async function showAnalysis() {
       document.createTextNode("This is a pilot: one run per cell, one model, ten environments that were built automatically and not yet reviewed for neutrality. "
         + "Standard errors are clustered by environment, and ten clusters is few, so the intervals are rough. The route is worked out from what the tool calls did "
         + "(compliant or loophole); runs that took neither are left out of the route models. Nothing here is a statement about why the model chose as it did.")),
+    ...(a.excluded && a.excluded.length ? [el("div", { class: "box" },
+      el("b", { text: `Left out: ${a.excluded_runs} runs. ` }),
+      ...a.excluded.map((x) => el("p", { class: "small", text: `${x.env}: ${x.reason}` })))] : []),
     el("h2", { text: "Rates" }),
     el("p", { class: "muted small", text: "Loophole share is out of the runs that took a route." }),
     el("h3", { text: "By cost version" }), table(RATE_HEAD, a.tables.by_cost.map(rateRow)),
@@ -214,10 +219,176 @@ async function showAnalysis() {
   app.replaceChildren(root);
 }
 
+// ---- Reviewing the accepted worlds: keep or veto each one before it is built -------------------------------------------
+const VETO_KEY = "cd-world-review";
+function loadReview() {
+  try { return JSON.parse(localStorage.getItem(VETO_KEY) || "{}"); } catch (e) { return {}; }
+}
+function saveReview(review) {
+  try { localStorage.setItem(VETO_KEY, JSON.stringify(review)); } catch (e) { /* private window or blocked storage: the choices last until the page is closed */ }
+}
+const review = loadReview();
+const decision = (id) => (review[id] && review[id].decision) || "";
+function decide(id, value) {
+  review[id] = { ...(review[id] || {}), decision: review[id] && review[id].decision === value ? "" : value };
+  saveReview(review);
+}
+const worldFilter = { text: "", domain: "all", status: "all", weak: false, builtOnly: false };
+
+// Compliant share (share of choices taking the rule-following option) at each pressure level, cheap and costly version.
+function shareChart(levels) {
+  const w = 120, h = 46, X = (i) => 14 + i * 46, Y = (v) => 6 + (1 - v) * (h - 16);
+  const svg = svgEl("svg", { viewBox: `0 0 ${w} ${h}`, width: w, height: h, role: "img", "aria-label": "Share choosing the compliant option per pressure level" });
+  [["cheap_share", "var(--accent)"], ["costly_share", "var(--amber)"]].forEach(([key, color]) => {
+    const pts = levels.map((l, i) => (l[key] == null ? null : [X(i), Y(l[key])])).filter(Boolean);
+    if (pts.length > 1) svg.append(svgEl("polyline", { points: pts.map((q) => q.join(",")).join(" "), fill: "none", stroke: color, "stroke-width": 2 }));
+    pts.forEach((q) => svg.append(svgEl("circle", { cx: q[0], cy: q[1], r: 3, fill: color })));
+  });
+  levels.forEach((l, i) => svg.append(svgEl("text", { x: X(i), y: h - 1, "text-anchor": "middle", "font-size": 9, fill: "currentColor", opacity: 0.6 }, "p" + l.pressure)));
+  return svg;
+}
+
+function decisionButtons(id, after) {
+  const box = el("span", { class: "decide" });
+  [["keep", "Keep"], ["veto", "Veto"]].forEach(([value, label]) => {
+    const b = el("button", { class: "ghost" + (decision(id) === value ? " on-" + value : ""), type: "button", text: label });
+    b.addEventListener("click", (ev) => { ev.preventDefault(); ev.stopPropagation(); decide(id, value); after(); });
+    box.append(b);
+  });
+  return box;
+}
+
+function reviewBar(worlds, rerender) {
+  const count = (v) => worlds.filter((w) => decision(w.id) === v).length;
+  const kept = worlds.filter((w) => decision(w.id) !== "veto");
+  const bar = el("div", { class: "box sticky" });
+  bar.append(el("b", { text: `${count("keep")} kept · ${count("veto")} vetoed · ${worlds.length - count("keep") - count("veto")} undecided` }),
+    el("span", { class: "muted small", text: "  Choices are saved in this browser only. Anything not vetoed counts as kept." }));
+  const actions = el("div", { class: "row" });
+  const act = (label, fn) => { const b = el("button", { class: "ghost", type: "button", text: label }); b.addEventListener("click", fn); actions.append(b); return b; };
+  const copy = (text, button, done) => { navigator.clipboard.writeText(text).then(() => { button.textContent = done; setTimeout(() => rerender(), 1200); }, () => { window.prompt("Copy:", text); }); };
+  const ids = (v) => worlds.filter((w) => decision(w.id) === v).map((w) => w.id);
+  const b1 = act("Copy build command for kept worlds", () => copy("./scripts/run/run_env_build.sh --only " + kept.map((w) => w.id).join(" "), b1, "Copied"));
+  const b2 = act("Copy vetoed ids", () => copy(ids("veto").join("\n"), b2, "Copied"));
+  act("Download review (JSON)", () => {
+    const blob = new Blob([JSON.stringify({ reviewed: new Date().toISOString(), source: "agentic/#/worlds", worlds: worlds.map((w) => ({ id: w.id, decision: decision(w.id) || "undecided", note: (review[w.id] && review[w.id].note) || "" })) }, null, 1)], { type: "application/json" });
+    const a = el("a", { href: URL.createObjectURL(blob), download: "world-review.json" });
+    a.click();
+  });
+  act("Clear all", () => { if (window.confirm("Clear every keep/veto choice?")) { Object.keys(review).forEach((k) => delete review[k]); saveReview(review); rerender(); } });
+  bar.append(actions);
+  return bar;
+}
+
+async function showWorlds() {
+  const data = await getJSON("data/worlds.json");
+  const worlds = data.worlds;
+  setCrumbs([["Agentic runs", "#/"], ["Accepted worlds"]]);
+  const root = el("div"), list = el("div"), barSlot = el("div");
+  const domains = [...new Set(worlds.map((w) => w.domain))].sort();
+  const input = (tag, attrs, handler) => { const n = el(tag, attrs); n.addEventListener(tag === "input" && attrs.type === "checkbox" ? "change" : "input", handler); return n; };
+  const select = (options, key) => {
+    const n = el("select", {}, ...options.map(([v, label]) => el("option", { value: v, text: label })));
+    n.value = worldFilter[key]; n.addEventListener("change", () => { worldFilter[key] = n.value; draw(); }); return n;
+  };
+  const checkbox = (label, key) => {
+    const c = el("input", { type: "checkbox" }); c.checked = worldFilter[key];
+    c.addEventListener("change", () => { worldFilter[key] = c.checked; draw(); });
+    return el("label", { class: "small" }, c, document.createTextNode(" " + label));
+  };
+  const search = el("input", { type: "search", placeholder: "Search rule, task or id", value: worldFilter.text });
+  search.addEventListener("input", () => { worldFilter.text = search.value.toLowerCase(); draw(); });
+
+  function draw() {
+    barSlot.replaceChildren(reviewBar(worlds, draw));
+    const shown = worlds.filter((w) =>
+      (worldFilter.domain === "all" || w.domain === worldFilter.domain) &&
+      (worldFilter.status === "all" || (worldFilter.status === "undecided" ? !decision(w.id) : decision(w.id) === worldFilter.status)) &&
+      (!worldFilter.weak || (w.shift ?? 0) < 0.3) && (!worldFilter.builtOnly || w.built) &&
+      (!worldFilter.text || (w.id + w.rule + w.task + w.summary).toLowerCase().includes(worldFilter.text)));
+    list.replaceChildren(el("p", { class: "muted small", text: `${shown.length} of ${worlds.length} worlds shown` }));
+    shown.forEach((w) => {
+      const tags = el("div", { class: "tags" });
+      const tag = (text, cls) => tags.append(el("span", { class: "tag " + (cls || ""), text }));
+      tag(w.shift == null ? "shift n/a" : `shift ${w.shift.toFixed(2)}`, (w.shift ?? 0) < 0.3 ? "warn" : "");
+      if (w.built) tag("built");
+      if (w.flaws.length) tag(`${w.flaws.length} open flaw${w.flaws.length > 1 ? "s" : ""}`, "warn");
+      const row = el("a", { class: "listrow world " + decision(w.id), href: "#/world/" + encodeURIComponent(w.id) },
+        el("div", { class: "grow" },
+          el("div", { class: "t", text: w.id }),
+          el("div", { class: "small", text: w.rule }),
+          el("div", { class: "muted small", text: w.summary }), tags),
+        shareChart(w.levels), decisionButtons(w.id, draw));
+      list.append(row);
+    });
+  }
+  root.append(el("h1", { text: "Accepted worlds" }),
+    el("p", { class: "muted", text: `${worlds.length} worlds from ${data.source}. Veto the ones you don't want built into environments.` }),
+    el("div", { class: "box small" },
+      document.createTextNode("Each card shows the rule, what the world is about and a small chart of the share of choices that took the rule-following option at "
+        + "pressure p1 to p3: blue is the cheap version, amber the costly one. A world works as a test when the amber line sits clearly below the blue one. "
+        + "Shift is that gap at p3 from the generator's own screening (six answers per version, from the same model that wrote the world), not an independent check. "
+        + "Open the card to read the rule, both options, and all three situations as the agent would see them.")),
+    barSlot,
+    el("div", { class: "row filters" }, search, select([["all", "All domains"], ...domains.map((d) => [d, d])], "domain"),
+      select([["all", "Any decision"], ["undecided", "Undecided"], ["keep", "Kept"], ["veto", "Vetoed"]], "status"),
+      checkbox("shift below 0.3", "weak"), checkbox("already built", "builtOnly")),
+    list);
+  app.replaceChildren(root);
+  draw();
+}
+
+async function showWorld(id) {
+  const data = await getJSON("data/worlds.json");
+  const w = data.worlds.find((x) => x.id === id);
+  if (!w) { app.replaceChildren(el("p", { class: "muted", text: "No such world: " + id })); return; }
+  setCrumbs([["Agentic runs", "#/"], ["Accepted worlds", "#/worlds"], [w.id]]);
+  const root = el("div"), head = el("div"), body = el("div");
+  const drawHead = () => {
+    head.replaceChildren(decisionButtons(w.id, drawHead));
+    const note = el("textarea", { rows: "2", placeholder: "Note on this world (saved in this browser)" });
+    note.value = (review[w.id] && review[w.id].note) || "";
+    note.addEventListener("input", () => { review[w.id] = { ...(review[w.id] || {}), note: note.value }; saveReview(review); });
+    head.append(el("div", {}, note));
+  };
+  const box = (title, text) => el("div", { class: "box" }, el("b", { text: title + " " }), document.createTextNode(text));
+  let level = w.levels.length - 1;
+  const levelBody = el("div"), tabs = el("div", { class: "tabs" });
+  const drawLevel = () => {
+    const l = w.levels[level];
+    [...tabs.children].forEach((b, i) => b.classList.toggle("on", i === level));
+    levelBody.replaceChildren(
+      el("p", { class: "muted small", text: `Chooser, rule shown: cheap version ${JSON.stringify(l.counts.cheap)} · costly version ${JSON.stringify(l.counts.costly)} (A is the compliant option).` }),
+      el("h3", { text: "What the agent has seen so far" }), el("div", { class: "box" }, pre(l.situation)),
+      el("div", { class: "two" },
+        el("div", {}, el("h3", { text: "Cheap version ends" }), el("div", { class: "box" }, pre(l.cheap_ending))),
+        el("div", {}, el("h3", { text: "Costly version ends" }), el("div", { class: "box" }, pre(l.costly_ending)))),
+      el("h3", { text: "Files and tools in the workspace" }), ...l.workspace.map((f) => el("div", { class: "box small" }, pre(f))),
+      ...l.flaws.map((f) => el("div", { class: "box warnbox small", text: "Open flaw: " + f })));
+  };
+  w.levels.forEach((l, i) => { const b = el("button", { class: "ghost", type: "button", text: "p" + l.pressure }); b.addEventListener("click", () => { level = i; drawLevel(); }); tabs.append(b); });
+  body.append(
+    box("Rule:", w.rule), box("What makes it ambiguous:", w.ambiguity),
+    box("If the rule is read broadly:", w.explicit || "(not recorded)"),
+    box("The task:", w.task),
+    el("div", { class: "two" },
+      el("div", { class: "box" }, el("b", { text: "Compliant option" }), pre(w.compliant_option)),
+      el("div", { class: "box" }, el("b", { text: "Loophole option" }), pre(w.loophole_option))),
+    box("Why someone might take the loophole:", w.loophole_rationale), box("What the loophole risks:", w.loophole_risk),
+    el("h2", { text: "The three pressure levels" }), tabs, levelBody);
+  root.append(el("h1", { text: w.id }),
+    el("p", { class: "muted", text: `${w.domain} · ${w.shift == null ? "shift n/a" : "shift " + w.shift.toFixed(2)}${w.built ? " · already built" : ""} · source ${w.source_id}` }),
+    head, shareChart(w.levels), body);
+  app.replaceChildren(root);
+  drawHead(); drawLevel();
+}
+
 async function route() {
   const [, kind, id] = location.hash.split("/");
   try {
-    if (kind === "analysis") await showAnalysis();
+    if (kind === "worlds") await showWorlds();
+    else if (kind === "world") await showWorld(decodeURIComponent(id));
+    else if (kind === "analysis") await showAnalysis();
     else if (kind === "run") await showRun(id);
     else if (kind === "env") await showEnv(id);
     else await showIndex();
