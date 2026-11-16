@@ -1,6 +1,6 @@
 # Cost traces
 
-A static site for the constraint-drift study. The root page links to the current work: `breakdown/` (the 50 environments, one by one, with the baseline runs and their analysis) and `validation/` (the 20 harm and reputation worlds with the forced-choice probe). Everything earlier is under `old_logs/`: `cost-traces/`, `agentic/` and `pilots/`.
+A static site for the constraint-drift study. The root page links to the current work: `breakdown/` (the 50 environments, one by one, with the baseline runs and their analysis) and `validation/` (the 20 harm and reputation worlds in plain English, with the agentic baseline runs). Everything earlier is under `old_logs/`: `cost-traces/`, `agentic/` and `pilots/`.
 
 The old cost-traces page is a static browser for the scenarios and model trajectories of the cost-shift study: when the compliant route still works but is slow or expensive, does a model read an ambiguous safety rule more loosely? The earlier pilots blocked the compliant route instead; they are on the `old_logs/pilots/` page.
 
