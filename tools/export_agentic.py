@@ -17,7 +17,7 @@ from pathlib import Path
 import yaml
 from inspect_ai.log import read_eval_log
 
-OUT = Path(__file__).resolve().parent.parent / "agentic" / "data"
+OUT = Path(__file__).resolve().parent.parent / "old_logs" / "agentic" / "data"
 LEVELS = ("p1", "p2", "p3")
 
 

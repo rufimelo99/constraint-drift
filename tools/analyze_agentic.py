@@ -20,7 +20,7 @@ import pandas as pd
 import statsmodels.formula.api as smf
 from statsmodels.discrete.conditional_models import ConditionalLogit
 
-DATA = Path("agentic/data")
+DATA = Path("old_logs/agentic/data")
 # Environments left out of an experiment's analysis, with the reason shown on the page. The runs stay published.
 EXCLUDED_ENVS: dict[str, dict[str, str]] = {
     "env-release-20261102-glm": {

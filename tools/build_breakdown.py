@@ -267,7 +267,7 @@ def main() -> None:
 </head>
 <body>
 <header class="top">
-  <nav class="crumbs"><a href="../">← Cost traces</a></nav>
+  <nav class="crumbs"><a href="../">← Home</a> · <a href="../validation/">20 worlds: harm vs reputation</a></nav>
   <button id="theme" class="ghost" type="button" aria-label="Toggle theme">Theme</button>
 </header>
 <main>

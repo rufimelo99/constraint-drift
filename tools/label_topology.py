@@ -58,7 +58,7 @@ THROTTLE = {6, 9, 10, 19, 38, 45, 50}
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", default="data", type=Path)
+    ap.add_argument("--data", default="old_logs/cost-traces/data", type=Path)
     ap.add_argument("--out", default=None, type=Path)
     a = ap.parse_args()
     labels, n = {}, 0

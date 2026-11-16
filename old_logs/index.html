@@ -3,22 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Blocker traces: old logs</title>
-<meta name="description" content="Browse the scenarios and model trajectories of the blocker-shift study.">
+<title>Old logs</title>
+<meta name="description" content="Earlier runs and experiments, kept for reference.">
 <link rel="stylesheet" href="../assets/style.css?v=10">
+<style>
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; max-width: 900px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; display: block; color: inherit; text-decoration: none; }
+.card:hover { border-color: var(--accent); }
+.card h2 { margin: 0 0 6px; font-size: 17px; color: var(--accent); }
+.card p { margin: 0; max-width: none; color: var(--muted); font-size: 14px; }
+</style>
 </head>
 <body>
 <header class="top">
-  <nav class="crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
-  <a class="ghost" href="../">← New runs</a>
+  <nav class="crumbs"><a href="../">← Home</a></nav>
   <button id="theme" class="ghost" type="button" aria-label="Toggle theme">Theme</button>
 </header>
-<p class="oldbanner">Old logs: the earlier pilot runs, kept for reference. They are not part of the new experiments.</p>
-<main id="app"><p class="muted">Loading…</p></main>
-<footer class="foot">
-  Trajectories are one model's answers. Labels come from a second model reading the reasoning and have not been checked by hand.
-</footer>
-<script>window.OLD_LOGS = true;</script>
-<script src="../assets/app.js?v=10"></script>
+<main>
+<h1>Old logs</h1>
+<p>Earlier runs and experiments, kept for reference. They are not part of the current work.</p>
+<div class="cards">
+  <a class="card" href="cost-traces/"><h2>Cost traces</h2><p>The earlier generated runs: every candidate world with filters, the urgency levels, the two versions the model saw, and the trajectories with their monitor labels.</p></a>
+  <a class="card" href="agentic/"><h2>Agentic runs</h2><p>A model working inside a built environment: a shell, files and tools. Runs step by step, the environments as the model met them, and the earlier multivariate analysis.</p></a>
+  <a class="card" href="pilots/"><h2>Blocker pilots</h2><p>The first pilots, where the compliant route was blocked instead of costly.</p></a>
+</div>
+</main>
+<script>
+// Links to the pilot and cost-traces pages from before they moved (`old_logs/#/<run>/...`).
+if (/^#\/./.test(location.hash)) location.replace((/^#\/pilot-/.test(location.hash) ? "pilots/" : "cost-traces/") + location.hash);
+const root = document.documentElement, key = "theme";
+try { const s = localStorage.getItem(key); if (s) root.dataset.theme = s; } catch (_) {}
+document.getElementById("theme").onclick = () => {
+  const next = (root.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")) === "dark" ? "light" : "dark";
+  root.dataset.theme = next;
+  try { localStorage.setItem(key, next); } catch (_) {}
+};
+</script>
 </body>
 </html>

@@ -43,7 +43,7 @@ if (!OLD) {
   LABELS.not_applicable[0] = "Cheap route";
 }
 // Pilot links from before the split.
-if (!OLD && /^#\/pilot-/.test(location.hash)) location.replace("old_logs/" + location.hash);
+if (!OLD && /^#\/pilot-/.test(location.hash)) location.replace("../pilots/" + location.hash);
 
 async function run(id) {
   await manifest();

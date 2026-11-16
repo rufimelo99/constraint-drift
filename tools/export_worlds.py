@@ -13,7 +13,7 @@ import argparse
 import json
 from pathlib import Path
 
-OUT = Path(__file__).resolve().parent.parent / "agentic" / "data" / "worlds.json"
+OUT = Path(__file__).resolve().parent.parent / "old_logs" / "agentic" / "data" / "worlds.json"
 
 
 def lines(path: Path) -> list[dict]:

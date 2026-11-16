@@ -124,7 +124,7 @@ def main() -> None:
     ap.add_argument("--log", required=True)
     ap.add_argument("--id", required=True)
     ap.add_argument("--title", required=True)
-    ap.add_argument("--out", default="data", type=Path)
+    ap.add_argument("--out", default="old_logs/cost-traces/data", type=Path)
     a = ap.parse_args()
 
     rules = {c["id"]: c for c in jsonl(a.generated / "constraints.jsonl")}

@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 
-DATA = Path("data")
+DATA = Path("old_logs/cost-traces/data")
 REFERENCES = {"ambiguity": "environment", "loophole": "equivalent", "cost": "queue", "urgency": 1, "model": "glm-5p3-flash", "gen": "deepseek-v4p1-flash"}
 RATE_FACTORS = ("ambiguity", "loophole", "cost", "fee", "urgency", "model", "gen")
 TERM = re.compile(r"C\((\w+), Treatment\((.+?)\)\)\[T\.(.+)\]")
