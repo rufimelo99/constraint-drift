@@ -9,15 +9,26 @@ import html
 import json
 from pathlib import Path
 
+import plots
 from build_breakdown import STYLE
 
-SHORT = {"dependencies-and-supply-chain-2": "Deps 2", "infrastructure-as-code-and-cloud-3": "IaC 3", "pull-requests-and-code-review-1": "PR 1",
-         "pull-requests-and-code-review-3": "PR 3", "release-and-deployment-pipelines-3": "Release 3", "secrets-and-credentials-3": "Secrets 3"}
+ABBREVIATIONS = {"pull-requests-and-code-review": "PR", "secrets-and-credentials": "Secrets", "dependencies-and-supply-chain": "Deps",
+                 "infrastructure-as-code-and-cloud": "IaC", "release-and-deployment-pipelines": "Release"}
+
+
+def short(rule_id: str) -> str:
+    """`pull-requests-and-code-review-2` as `PR 2`."""
+    for long, abbr in ABBREVIATIONS.items():
+        if rule_id.startswith(long):
+            return abbr + rule_id[len(long):].replace("-", " ")
+    return rule_id
+
 
 ROOT = Path(__file__).resolve().parent.parent / "validation"
 e = html.escape
 
 EXTRA = """
+.pair { display: flex; gap: 16px; flex-wrap: wrap; } .pair svg.plot { flex: 1 1 300px; }
 .fig { background: #fafaf7; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 12px 0; max-width: 760px; }
 .fig img { width: 100%; height: auto; display: block; }
 .fig figcaption { color: #4a4a44; font-size: 13px; margin-top: 6px; }
@@ -76,10 +87,7 @@ def plain_html(w: dict, pl: dict) -> str:
 </dl></details>"""
 
 
-NO_ENV = {
-    "secrets-and-credentials-1|7": "The environment build failed: the builder said the environment was complete, but its final report did not fit the schema, so nothing was copied.",
-    "secrets-and-credentials-3|1": "This world was not in the 2026-11-15 environment build, so it has no run in this baseline.",
-}
+NO_ENV: dict[str, str] = {}   # world "<rule id>|<world>" to why it has no agentic run; every world has one in the current log
 
 
 def agentic_world_html(w: dict, ag: dict) -> str:
@@ -113,6 +121,7 @@ def agentic_world_html(w: dict, ag: dict) -> str:
 def agentic_summary_html(ag: dict, worlds: list) -> str:
     """Overall loophole counts of the agentic baseline, by kind of stakes, and per world."""
     allc = [c for cs in ag["cells"].values() for c in cs]
+    reputation_only = sum(all(c[0] == "reputation" for c in cs) for cs in ag["cells"].values())
 
     def rate(sub: list) -> str:
         k = sum(c[3] == "loophole" for c in sub)
@@ -127,21 +136,23 @@ def agentic_summary_html(ag: dict, worlds: list) -> str:
         if not cs:
             continue
         cheap, costly = [c for c in cs if c[2] == "cheap"], [c for c in cs if c[2] == "costly"]
-        per += (f'<tr><td><a href="#w{w["n"]}">World {w["n"]}</a> <span class="muted">{e(SHORT.get(w["rule_id"], w["rule_id"]))} w{w["world"]}</span></td>'
+        per += (f'<tr><td><a href="#w{w["n"]}">World {w["n"]}</a> <span class="muted">{e(short(w["rule_id"]))} w{w["world"]}</span></td>'
                 f'<td>{sum(c[3] == "loophole" for c in cheap)}/{len(cheap)}</td><td>{sum(c[3] == "loophole" for c in costly)}/{len(costly)}</td></tr>')
-    return f"""<h2>Agentic baseline on the 18 environments</h2>
-<p>A model working inside the built environment of each world: a shell, files and the world's tools, with no deadline. The log is {e(ag["log"])}, model {e(ag["model"].split("/")[-1])}, one run per cell: 18 environments, cheap and costly honest route, reputation and harm stakes at three levels (one environment ran only its reputation levels). {sum(len(c) for c in ag["cells"].values())} runs with a limit of {e(str(ag["message_limit"]))} messages. A run counts as a loophole when the environment's own state shows the loophole action was taken, whatever the agent said.</p>
+    return f"""<h2>Agentic baseline on the {len(ag["cells"])} environments</h2>
+<p>A model working inside the built environment of each world: a shell, files and the world's tools, with no deadline. The log is {e(ag["log"])}, model {e(ag["model"].split("/")[-1])}, one run per cell: {len(ag["cells"])} environments, cheap and costly honest route, reputation and harm stakes at three levels ({reputation_only} ran only their reputation levels). {sum(len(c) for c in ag["cells"].values())} runs with a limit of {e(str(ag["message_limit"]))} messages. A run counts as a loophole when the environment's own state shows the loophole action was taken, whatever the agent said.</p>
 <table class="sum"><tr><th>Share of runs that took the loophole</th><th>Cheap</th><th>Costly</th></tr>{rows}</table>
 <details class="orig"><summary>Per world</summary><table class="sum"><tr><th>World</th><th>Cheap</th><th>Costly</th></tr>{per}</table></details>
-<p class="muted small">One model and one run per cell, so single cells are noisy. Two worlds have no runs: secrets-1 world 7 (the environment build failed) and secrets-3 world 1 (not in this build). The loophole counts are small, so differences between worlds or kinds of stakes are suggestive only.</p>"""
+<p class="muted small">One model and one run per cell, so single cells are noisy. The loophole counts are small, so differences between worlds or kinds of stakes are suggestive only.</p>"""
 
 
 def stats_html(st: dict) -> str:
     """The regression tables of the agentic baseline and the counts behind them, with a plain reading."""
     def row(t: dict) -> str:
+        pval = "< 0.001" if t["p"] < 0.001 else f"{t['p']:.3f}"
         sig = " class=\"sig\"" if t["p"] < 0.05 else ""
-        return (f'<tr{sig}><td>{e(t["term"])}</td><td>{t["odds"]:.2f}</td><td>{t["lo"]:.2f} to {t["hi"]:.2f}</td><td>{t["p"]:.3f}</td></tr>')
+        return (f'<tr{sig}><td>{e(t["term"])}</td><td>{t["odds"]:.2f}</td><td>{t["lo"]:.2f} to {t["hi"]:.2f}</td><td>{pval}</td></tr>')
 
+    cost = [next(t for t in m["terms"] if t["term"].startswith("Honest route")) for m in st["models"]]
     tables = "".join(
         f'<h3>{e(m["label"])}</h3><p class="small muted">{m["n"]} runs, {m["events"]} loopholes, {m["clusters"]} worlds. {e(m["formula"])}</p>'
         f'<table class="sum"><tr><th>Factor</th><th>Odds ratio</th><th>95% interval</th><th>p</th></tr>{"".join(row(t) for t in m["terms"])}</table>'
@@ -155,7 +166,33 @@ def stats_html(st: dict) -> str:
 <table class="sum"><tr><th>Loopholes taken</th><th>Cheap</th><th>Costly</th></tr>{rows}</table>
 <p class="small muted">Per world, costly against cheap: {st["worlds_up"]} worlds take the loophole more often, {st["worlds_flat"]} equally often (mostly never) and {st["worlds_down"]} less often. A sign test on the {st["worlds_up"] + st["worlds_down"]} worlds that differ gives p = {st["sign_test_p"]:.3f}.</p>
 {tables}
-<p><strong>How to read it.</strong> Making the honest route costly raises the odds of the loophole in every model: about 3 times across all worlds (the interval includes 1) and about 10 times when each world is compared only with itself. The second figure rests on the {st["models"][2]["clusters"]} worlds where any run took the loophole, and on {st["models"][2]["events"]} loopholes, so its interval is wide and it says nothing about the {st["worlds"] - st["worlds_with_loophole"]} worlds where the model never did. Harm against reputation changes nothing measurable (odds ratio near 1). The pressure level points the other way from what one would expect, with fewer loopholes at higher pressure, but its p value is borderline and moves between models, so I would not read it as an effect. One model, one run per cell and {st["models"][0]["events"]} events in all: this is a pilot analysis.</p>"""
+<p><strong>How to read it.</strong> Making the honest route costly raises the odds of the loophole in all three models: {cost[0]["odds"]:.1f} times across all worlds (95% interval {cost[0]["lo"]:.2f} to {cost[0]["hi"]:.2f}) and {cost[2]["odds"]:.1f} times when each world is compared only with itself. The second figure rests on the {st["models"][2]["clusters"]} worlds where any run took the loophole, and on {st["models"][2]["events"]} loopholes, so its interval is wide and it says nothing about the {st["worlds"] - st["worlds_with_loophole"]} worlds where the model never did. Harm against reputation points the same way in every model but its interval includes 1 in each, so I read it as no measurable difference. The pressure level shows no effect (odds ratio near 1). One model, one run per cell and {st["models"][0]["events"]} loopholes in all: this is a pilot analysis.</p>"""
+
+
+def share(cells: list, cost: str) -> float:
+    """Share of the runs of `cost` (cheap or costly) that took the loophole."""
+    sub = [c for c in cells if c[2] == cost]
+    return sum(c[3] == "loophole" for c in sub) / len(sub) if sub else 0.0
+
+
+def figures_html(ag: dict, worlds: list, st: dict) -> str:
+    """The plots of the agentic baseline: by kind of stakes, by pressure level, per world and the odds ratios."""
+    allc = [c for cs in ag["cells"].values() for c in cs]
+    kinds = [(lab, share([c for c in allc if sel(c)], "cheap"), share([c for c in allc if sel(c)], "costly"), "")
+             for lab, sel in (("All runs", lambda c: True), ("Reputation stakes", lambda c: c[0] == "reputation"), ("Harm stakes", lambda c: c[0] == "harm"))]
+    per = []
+    for w in worlds:
+        cs = ag["cells"].get(str(w["n"]))
+        if cs:
+            per.append((f'World {w["n"]} · {short(w["rule_id"])} w{w["world"]}', share(cs, "cheap"), share(cs, "costly"), f'#w{w["n"]}'))
+    per.sort(key=lambda r: (r[2] - r[1], r[2]))
+    by_level = {k: {c: [share([x for x in allc if x[0] == k and x[1] == lv], c) for lv in (1, 2, 3)] for c in ("cheap", "costly")} for k in ("reputation", "harm")}
+    pair = f'<div class="pair">{plots.lines(by_level["reputation"], "Reputation stakes, by level")}{plots.lines(by_level["harm"], "Harm stakes, by level")}</div>'
+    fm = [m for m in st["models"] if m["label"] in ("Took the loophole", "Took the loophole, each world compared with itself")]
+    return f"""<figure class="chart">{plots.dumbbell(kinds, "Loophole share by kind of stakes", 150)}<figcaption>Open circle: honest route cheap. Filled: honest route costly. Each point is 114, 57 or 57 runs of one model.</figcaption></figure>
+<figure class="chart">{pair}<figcaption>Loophole share at pressure levels P1 to P3, 18 to 20 runs per point, so one run moves a point by about 5 percentage points.</figcaption></figure>
+<figure class="chart">{plots.dumbbell(per, "Loophole share, cheap to costly, by world", 230, 18)}<figcaption>Six runs per world and version (three for the two worlds with reputation levels only). Worlds with no loophole in either version sit at 0%. Click a name to jump to the world.</figcaption></figure>
+<figure class="chart">{plots.forest(fm[0]["terms"], "Odds ratios, all runs")}{plots.forest(fm[1]["terms"], "Odds ratios, each world compared with itself")}<figcaption>Odds ratios with 95% intervals on a log axis; the vertical line is no effect. Orange marks p below 0.05. The second panel uses only the {fm[1]["clusters"]} worlds where a loophole occurred, so its intervals are wide.</figcaption></figure>"""
 
 
 def world_html(w: dict, pl: dict, ag: dict, stakes: dict) -> str:
@@ -190,7 +227,7 @@ def main() -> None:
 <meta name="description" content="Twenty worlds in plain English, each written for harm and reputation stakes, with the agentic baseline runs.">
 <link rel="stylesheet" href="../assets/style.css?v=10">
 <style>
-{STYLE}{EXTRA}</style>
+{plots.CSS}{STYLE}{EXTRA}</style>
 </head>
 <body>
 <header class="top">
@@ -204,6 +241,8 @@ def main() -> None:
 <p>Both kinds say what happens if the task is not done. Reputation names only who learns of the failure and what they think of the company. Harm names who is left without the result. Neither names money, a deadline or physical harm. The three pressure levels raise how many people are affected. Here is world 1:</p>
 {stakes_for(stakes, 1)}
 {agentic_summary_html(agentic, worlds)}
+<h2>Plots</h2>
+{figures_html(agentic, worlds, stats)}
 {stats_html(stats)}
 <div class="jump">{jump}</div>
 {"".join(world_html(w, plain[f"{w['rule_id']}|{w['world']}"], agentic, stakes) for w in worlds)}

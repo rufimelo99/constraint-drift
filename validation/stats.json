@@ -3,203 +3,203 @@
   {
    "label": "Took the loophole",
    "formula": "loophole ~ costly + pressure + harm",
-   "n": 210,
-   "clusters": 18,
-   "events": 29,
+   "n": 228,
+   "clusters": 20,
+   "events": 37,
    "terms": [
     {
      "term": "Honest route is costly",
-     "odds": 3.0579458529644934,
-     "lo": 0.7319963006783216,
-     "hi": 12.774699586592709,
-     "p": 0.12545326552186353
+     "odds": 3.241872151826099,
+     "lo": 0.9867144569694396,
+     "hi": 10.651242590551291,
+     "p": 0.05263214464322462
     },
     {
      "term": "Pressure level (per step, P1 to P3)",
-     "odds": 0.7305160441660737,
-     "lo": 0.5363791979617573,
-     "hi": 0.9949186933645728,
-     "p": 0.04633969444027126
+     "odds": 0.9505795991922406,
+     "lo": 0.7546691820951568,
+     "hi": 1.1973479185831455,
+     "p": 0.666890406044846
     },
     {
      "term": "Stakes are harm (vs reputation)",
-     "odds": 1.164814629258723,
-     "lo": 0.5945185826438762,
-     "hi": 2.282171087910084,
-     "p": 0.6566159118584176
+     "odds": 1.3961846941099583,
+     "lo": 0.7976530316824707,
+     "hi": 2.443834126669385,
+     "p": 0.2426271162927801
     }
    ]
   },
   {
    "label": "Took the loophole, with interactions",
    "formula": "loophole ~ costly * harm + costly * pressure",
-   "n": 210,
-   "clusters": 18,
-   "events": 29,
+   "n": 228,
+   "clusters": 20,
+   "events": 37,
    "terms": [
     {
      "term": "Honest route is costly",
-     "odds": 2.2592124874406956,
-     "lo": 0.38997356707806113,
-     "hi": 13.088171851366265,
-     "p": 0.3631791763427237
+     "odds": 3.7700251178100452,
+     "lo": 1.0999422022500145,
+     "hi": 12.921669302118515,
+     "p": 0.03472686059899002
     },
     {
      "term": "Stakes are harm (vs reputation)",
-     "odds": 0.611925107979175,
-     "lo": 0.09543406494486863,
-     "hi": 3.923675869739412,
-     "p": 0.6044233669048207
+     "odds": 1.1226369734896524,
+     "lo": 0.5810251926835609,
+     "hi": 2.169120702710048,
+     "p": 0.7306674246918302
     },
     {
      "term": "Costly x harm",
-     "odds": 2.5293378123081913,
-     "lo": 0.3308869704664613,
-     "hi": 19.33454726172255,
-     "p": 0.371210211386953
+     "odds": 1.3719371782606575,
+     "lo": 0.5029737030078473,
+     "hi": 3.7421670553310213,
+     "p": 0.536798372461629
     },
     {
      "term": "Pressure level (per step, P1 to P3)",
-     "odds": 0.814642955261565,
-     "lo": 0.6497205827066288,
-     "hi": 1.0214285374686274,
-     "p": 0.07569027247293993
+     "odds": 1.1795034692450697,
+     "lo": 0.8194516808237292,
+     "hi": 1.6977552996934049,
+     "p": 0.37431050072099104
     },
     {
      "term": "Costly x pressure level",
-     "odds": 0.8519970786005618,
-     "lo": 0.4884764843018802,
-     "hi": 1.486047016124698,
-     "p": 0.572530089666021
+     "odds": 0.7317987315209378,
+     "lo": 0.4827089416977322,
+     "hi": 1.1094250327581399,
+     "p": 0.14133826844768801
     }
    ]
   },
   {
    "label": "Took the loophole, each world compared with itself",
    "formula": "conditional logit, grouped by world",
-   "n": 84,
-   "clusters": 7,
-   "events": 29,
+   "n": 114,
+   "clusters": 10,
+   "events": 37,
    "terms": [
     {
      "term": "Honest route is costly",
-     "odds": 9.922883502223323,
-     "lo": 2.385306999535112,
-     "hi": 41.27922192736029,
-     "p": 0.0016037904528134707
+     "odds": 8.706796615245125,
+     "lo": 2.6364062406594626,
+     "hi": 28.754410504005442,
+     "p": 0.0003847095190187244
     },
     {
      "term": "Pressure level (per step, P1 to P3)",
-     "odds": 0.511194313940061,
-     "lo": 0.23993693946165998,
-     "hi": 1.0891179457025895,
-     "p": 0.08207829587632483
+     "odds": 0.9090535897330054,
+     "lo": 0.4959764265344787,
+     "hi": 1.6661647304098561,
+     "p": 0.7577366298561077
     },
     {
      "term": "Stakes are harm (vs reputation)",
-     "odds": 1.1949762277922384,
-     "lo": 0.3702800840789657,
-     "hi": 3.8564541988276093,
-     "p": 0.7657176250311497
+     "odds": 1.723641570863217,
+     "lo": 0.6111109983063733,
+     "hi": 4.861539512529559,
+     "p": 0.3034366990416235
     }
    ]
   }
  ],
  "ame": {
-  "costly": 0.1275570337089067,
-  "pressure": -0.03583419020979269,
-  "harm": 0.01741039203400541
+  "costly": 0.15267642499464143,
+  "pressure": -0.006579220472615308,
+  "harm": 0.04332329278907158
  },
  "cells": [
   {
    "kind": "reputation",
    "pressure": 1,
    "cost": "cheap",
-   "n": 18,
+   "n": 20,
    "loophole": 2
   },
   {
    "kind": "reputation",
    "pressure": 1,
    "cost": "costly",
-   "n": 18,
-   "loophole": 4
+   "n": 20,
+   "loophole": 3
   },
   {
    "kind": "reputation",
    "pressure": 2,
    "cost": "cheap",
-   "n": 18,
-   "loophole": 2
+   "n": 20,
+   "loophole": 0
   },
   {
    "kind": "reputation",
    "pressure": 2,
    "cost": "costly",
-   "n": 18,
+   "n": 20,
+   "loophole": 6
+  },
+  {
+   "kind": "reputation",
+   "pressure": 3,
+   "cost": "cheap",
+   "n": 20,
    "loophole": 3
   },
   {
    "kind": "reputation",
    "pressure": 3,
-   "cost": "cheap",
-   "n": 18,
-   "loophole": 1
+   "cost": "costly",
+   "n": 20,
+   "loophole": 3
   },
   {
-   "kind": "reputation",
-   "pressure": 3,
-   "cost": "costly",
+   "kind": "harm",
+   "pressure": 1,
+   "cost": "cheap",
    "n": 18,
    "loophole": 2
   },
   {
    "kind": "harm",
    "pressure": 1,
+   "cost": "costly",
+   "n": 18,
+   "loophole": 6
+  },
+  {
+   "kind": "harm",
+   "pressure": 2,
    "cost": "cheap",
-   "n": 17,
+   "n": 18,
    "loophole": 1
   },
   {
    "kind": "harm",
-   "pressure": 1,
+   "pressure": 2,
    "cost": "costly",
-   "n": 17,
+   "n": 18,
    "loophole": 5
   },
   {
    "kind": "harm",
-   "pressure": 2,
+   "pressure": 3,
    "cost": "cheap",
-   "n": 17,
-   "loophole": 1
+   "n": 18,
+   "loophole": 2
   },
   {
    "kind": "harm",
-   "pressure": 2,
+   "pressure": 3,
    "cost": "costly",
-   "n": 17,
+   "n": 18,
    "loophole": 4
-  },
-  {
-   "kind": "harm",
-   "pressure": 3,
-   "cost": "cheap",
-   "n": 17,
-   "loophole": 1
-  },
-  {
-   "kind": "harm",
-   "pressure": 3,
-   "cost": "costly",
-   "n": 17,
-   "loophole": 3
   }
  ],
- "worlds_with_loophole": 7,
- "worlds": 18,
- "worlds_up": 6,
- "worlds_flat": 11,
+ "worlds_with_loophole": 10,
+ "worlds": 20,
+ "worlds_up": 9,
+ "worlds_flat": 10,
  "worlds_down": 1,
- "sign_test_p": 0.125
+ "sign_test_p": 0.021484375
 }
