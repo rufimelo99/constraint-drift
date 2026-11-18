@@ -85,12 +85,27 @@ def lines(series: dict[str, list[float]], title: str) -> str:
     return _frame(bot + 30, body, title).replace(f'viewBox="0 0 {W}', 'style="max-width:400px" viewBox="0 0 400', 1)
 
 
+def bars(rows: list[tuple[str, float, str, str]], title: str, label_w: int = 170, row_h: int = 22) -> str:
+    """Horizontal bars, one per row: (label, value, link or "", text shown after the bar). The longest bar fills the width."""
+    x0, x1, top = label_w, W - 150, 30
+    peak = max((r[1] for r in rows), default=1) or 1
+    out = f'<text x="0" y="14" class="ttl">{e(title)}</text>'
+    for i, (label, value, link, text) in enumerate(rows):
+        y = top + i * row_h
+        name = f'<text x="{x0 - 8}" y="{y + 15}" class="lb" text-anchor="end">{e(label)}</text>'
+        out += f'<a href="{e(link)}">{name}</a>' if link else name
+        out += (f'<rect x="{x0}" y="{y + 4}" width="{max((x1 - x0) * value / peak, 1):.1f}" height="{row_h - 8}" class="bar"/>'
+                f'<text x="{x0 + (x1 - x0) * value / peak + 6:.1f}" y="{y + 15}" class="ax">{e(text)}</text>')
+    return _frame(top + len(rows) * row_h + 6, out, title)
+
+
 CSS = """
 svg.plot { width: 100%; height: auto; max-width: 760px; display: block; margin: 8px 0 18px; font-family: var(--sans); }
 .plot .ttl { font-size: 13px; font-weight: 600; fill: var(--fg); }
 .plot .lb { font-size: 12px; fill: var(--fg); }
 .plot a:hover .lb { fill: var(--accent); text-decoration: underline; }
 .plot .ax { font-size: 11px; fill: var(--muted); }
+.plot .bar { fill: var(--accent); opacity: .75; }
 .plot .grid { stroke: var(--line); stroke-width: 1; }
 .plot .one { stroke: var(--muted); stroke-width: 1.5; }
 .plot .dl { stroke: var(--grey); stroke-width: 2; fill: none; }
